@@ -12,7 +12,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Application.configureRouting() {
+
+    /* TODO When the repository is ready & mongo is running, 
+        add here the connection class and the userRepository.
+    */
+
     routing {
+        //Endpoint that will return all users -> TMP function.
         get("/") {
             call.respondText("Hello World!")
         }

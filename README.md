@@ -15,6 +15,10 @@ En esta repositorio se encontrará toda la información relacionada con el proye
     - Implementaciones especificas para cada plataforma, encontrando las siguientes:
         - Implementación del sistema de crear publicaciones
         - Implementación de la carga de vídeos para cada sistema
+
+Para la organización del proyecto, se seguirá el siguiente calendario:
+
+![Calendario del proyecto](./calendario.jpg)
     
 ## Servidor:
 
