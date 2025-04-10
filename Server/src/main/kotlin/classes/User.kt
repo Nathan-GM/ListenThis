@@ -1,23 +1,27 @@
 package dam.nathan.classes
 
+import kotlinx.serialization.Serializable
+import org.bson.codecs.pojo.annotations.BsonId
+import org.bson.types.ObjectId
+
 
 // TODO Add imports for the BSON ID and the Serializable
 
 // User class that will be used to interact with MongoDB.
-data class User {
+data class User(
     @BsonId val id : ObjectId,
     val username : String,
     val password : String,
     val biography : String,
-    val avatar : String?,    
-}
+    val avatar : String?,
+)
 
 // User class that will be use to send the information to the client.
 @Serializable
-data class UserSerializable {
+data class UserSerializable(
     val id : String?,
     val username : String,
     val password : String,
     val biography : String,
     val avatar : String?
-}
+)
