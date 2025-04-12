@@ -37,4 +37,7 @@ dependencies {
 
     //MongoDB implementation
     implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.10.1")
+
+    //env files usage implementation
+    implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
 }
