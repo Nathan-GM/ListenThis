@@ -103,7 +103,6 @@ fun Application.configureRouting() {
                 }
             }
 
-            //TODO test the put method
 
             /**
              * Endpoint that will update the date related to a user.
@@ -117,7 +116,7 @@ fun Application.configureRouting() {
                     }
                     val id = ObjectId(idParameter)
                     val userDB = UserDatabase(
-                        id = ObjectId(userParameter.id),
+                        id = ObjectId(idParameter),
                         username = userParameter.username,
                         password = userParameter.password,
                         biography = userParameter.biography,
