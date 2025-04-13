@@ -20,8 +20,8 @@ data class UserDatabase(
     @BsonId val id : ObjectId,
     val username : String,
     val password : String,
-    val biography : String,
-    val avatar : String?,
+    val biography : String? = "",
+    val avatar : String? = "",
 )
 
 /**
@@ -41,6 +41,6 @@ data class UserSerializable(
     val id : String? = "",
     val username : String,
     val password : String,
-    val biography : String,
-    val avatar : String?
+    val biography : String? = "",
+    val avatar : String? = ""
 )

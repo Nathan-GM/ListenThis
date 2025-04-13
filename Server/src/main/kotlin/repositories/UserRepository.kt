@@ -89,7 +89,7 @@ class UserRepository(private val connection:Connection) : AUserRepository() {
         val db = connection.getDataBase(nameDB)
         db?.let {
             val collectionDB = it.getCollection<UserDatabase>(collection)
-            val query = Filters.eq("id", id)
+            val query = Filters.eq("_id", id)
             val user = collectionDB.find(query)
             return user.firstOrNull()
         }
@@ -111,7 +111,7 @@ class UserRepository(private val connection:Connection) : AUserRepository() {
         val db = connection.getDataBase(nameDB)
         db?.let {
             val collectionDB = it.getCollection<UserDatabase>(collection)
-            val query = Filters.eq("id", item.id)
+            val query = Filters.eq("_id", item.id)
             var updates = Updates.combine(
                 Updates.set("username", item.username),
                 Updates.set("password", item.password),
@@ -137,7 +137,7 @@ class UserRepository(private val connection:Connection) : AUserRepository() {
         val db = connection.getDataBase(nameDB)
         db?.let {
             val collectionDB = it.getCollection<UserDatabase>(collection)
-            val query = Filters.eq("id", id)
+            val query = Filters.eq("_id", id)
             var updates = Updates.combine(
                 Updates.set("username", item.username),
                 Updates.set("password", item.password),
@@ -162,7 +162,7 @@ class UserRepository(private val connection:Connection) : AUserRepository() {
         val db = connection.getDataBase(nameDB)
         db?.let {
             val collectionDB = it.getCollection<UserDatabase>(collection)
-            val query = Filters.eq("id", item.id)
+            val query = Filters.eq("_id", item.id)
             collectionDB.deleteOne(query)
         }
     }
@@ -181,8 +181,10 @@ class UserRepository(private val connection:Connection) : AUserRepository() {
         val db = connection.getDataBase(nameDB)
         db?.let {
             val collectionDB = it.getCollection<UserDatabase>(collection)
-            val query = Filters.eq("id", id)
-            collectionDB.deleteOne(query)
+            val query = Filters.eq("_id", id)
+            /* TODO Check if the deleteOne actually works or if it was a field issue */
+            //collectionDB.deleteOne(query)
+            collectionDB.findOneAndDelete(query)
         }
     }
 

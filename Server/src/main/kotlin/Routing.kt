@@ -17,92 +17,163 @@ import org.bson.types.ObjectId
 
 fun Application.configureRouting() {
 
-    /* TODO When the repository is ready & mongo is running, 
-        add here the connection class and the userRepository.
-    */
-
     val connection = Connection()
     val repositoryUser = UserRepository(connection)
 
     routing {
         //Endpoint that will return all users -> TMP function.
-        get("/") {
-            val users = repositoryUser.getAll()
-            val responses = mutableListOf<UserResponse>()
 
-            for (user in users) {
-                val response = UserResponse(
-                    id = user.id.toString(),
-                    name = user.username
-                )
-                responses.add(response)
-            }
-            call.respond(HttpStatusCode.OK,responses)
-        }
+        /**
+         * Users route, everything related to the users will be placed here.
+         */
+        route("users") {
 
-        post("/users") {
-            try {
-                val user = call.receive<UserSerializable>()
-                val existing = repositoryUser.getAll()
-                var found = false
+            /**
+             * Endpoint that will return all the users available on the database
+             */
+            get("/") {
+                val users = repositoryUser.getAll()
+                val responses = mutableListOf<UserResponse>()
 
-                for (existingUser in existing) {
-                    if (existingUser.username.equals(user.username)) {
-                        call.respond(
-                            HttpStatusCode.Conflict
-                        )
-                        found = true
-                        break
-                    }
+                for (user in users) {
+                    val response = UserResponse(
+                        id = user.id.toString(),
+                        name = user.username
+                    )
+                    responses.add(response)
                 }
+                call.respond(HttpStatusCode.OK,responses)
+            }
 
-                if (!found) {
-                    /* TODO Implement avatar converters here */
-                    val cypherPassword = BCrypt.withDefaults().hashToString(12, user.password.toCharArray())
-                    /* TODO Check to change the biography value at first to empty */
-                    val userDataBase = UserDatabase(
-                        id = ObjectId(),
-                        username = user.username,
-                        password = cypherPassword,
-                        biography = "",
-                        avatar = user.avatar
+            /**
+             * Endpoint that will create a new user. If the username's already taken, it will return a conflict error.
+             */
+            post("/") {
+                try {
+                    val user = call.receive<UserSerializable>()
+                    val existing = repositoryUser.getAll()
+                    var found = false
+
+                    for (existingUser in existing) {
+                        if (existingUser.username.equals(user.username)) {
+                            call.respond(
+                                HttpStatusCode.Conflict
+                            )
+                            found = true
+                            break
+                        }
+                    }
+
+                    if (!found) {
+                        /* TODO Implement avatar converters here */
+                        val cypherPassword = BCrypt.withDefaults().hashToString(12, user.password.toCharArray())
+                        val userDataBase = UserDatabase(
+                            id = ObjectId(),
+                            username = user.username,
+                            password = cypherPassword,
+                            biography = user.biography,
+                            avatar = user.avatar
+                        )
+
+                        val result = repositoryUser.add(userDataBase)
+                        if (result == null) {
+                            call.respond(HttpStatusCode.InternalServerError)
+                        } else {
+                            call.respond(
+                                HttpStatusCode.Created,
+                                UserResponse(id = userDataBase.id.toString(), name = userDataBase.username)
+                            )
+                        }
+                    }
+                } catch (e: IllegalStateException) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                } catch (e: JsonConvertException) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                }
+            }
+
+            //TODO test the put method
+
+            /**
+             * Endpoint that will update the date related to a user.
+             */
+            put("/{id}") {
+                try {
+                    val idParameter = call.parameters["id"]!!
+                    val userParameter = call.receive<UserSerializable>()
+                    if (userParameter == null || idParameter.equals("")) {
+                        call.respond(HttpStatusCode.BadRequest)
+                    }
+                    val id = ObjectId(idParameter)
+                    val userDB = UserDatabase(
+                        id = ObjectId(userParameter.id),
+                        username = userParameter.username,
+                        password = userParameter.password,
+                        biography = userParameter.biography,
+                        avatar = userParameter.avatar
                     )
 
-                    val result = repositoryUser.add(userDataBase)
-                    if (result == null) {
-                        call.respond(HttpStatusCode.InternalServerError)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.Created,
-                            UserResponse(id = userDataBase.id.toString(), name = userDataBase.username)
-                        )
-                    }
+                    repositoryUser.updatebyId(userDB, id)
+                    call.respond(HttpStatusCode.NoContent)
                 }
-            } catch (e: IllegalStateException) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = mapOf("message" to e.localizedMessage)
-                )
-            } catch (e: JsonConvertException) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = mapOf("message" to e.localizedMessage)
-                )
-            } catch (e: Exception) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = mapOf("message" to e.localizedMessage)
-                )
+                catch (e: IllegalStateException) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                } catch (e: JsonConvertException) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                }
             }
-        }
 
-        // TODO do both put and delete endpoints
-
-        put("/users/{id}") {
-
-        }
-
-        delete("/users/{id}") {
+            /**
+             * Endpoint that will delete a user based on the ID.
+             */
+            delete("/{id}") {
+                try {
+                    val idParameter = call.parameters["id"]!!
+                    if (idParameter == null || idParameter.equals("")) {
+                        call.respond(HttpStatusCode.BadRequest)
+                    }
+                    val id = ObjectId(idParameter)
+                    repositoryUser.removeById(id)
+                    call.respond(HttpStatusCode.NoContent)
+                } catch (e: IllegalStateException) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                } catch (e: JsonConvertException) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = mapOf("message" to e.localizedMessage)
+                    )
+                }
+            }
 
         }
         // Static plugin. Try to access `/static/index.html`
