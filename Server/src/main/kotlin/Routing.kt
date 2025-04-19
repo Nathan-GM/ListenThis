@@ -115,6 +115,7 @@ fun Application.configureRouting() {
                         call.respond(HttpStatusCode.BadRequest)
                     }
                     val id = ObjectId(idParameter)
+                    /* TODO Before creating the UserDatabase make sure that the password is encrypted. if not encrypt */
                     val userDB = UserDatabase(
                         id = ObjectId(idParameter),
                         username = userParameter.username,
