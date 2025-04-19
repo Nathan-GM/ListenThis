@@ -3,9 +3,7 @@ package dam.nathan.ui.login
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,6 +14,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun LoginScreen(
+    isDarkModeOn: Boolean,
     register: () -> Unit,
     login: () -> Unit,
     changeTheme: () -> Unit
@@ -67,7 +66,7 @@ fun LoginScreen(
                     IconButton(
                         onClick = { showPassword = !showPassword }
                     ) {
-                        val icon = if (showPassword) Icons.Filled.Edit else Icons.Filled.Done
+                        val icon = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff
                         Icon(icon, contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña")
                     }
                 },)
@@ -107,7 +106,8 @@ fun LoginScreen(
                     changeTheme()
                 },
             ) {
-                Icon(Icons.Default.Face, contentDescription = "")
+                val icon = if (!isDarkModeOn) Icons.Default.DarkMode else Icons.Default.LightMode
+                Icon(icon, contentDescription = "")
             }
         }
     }

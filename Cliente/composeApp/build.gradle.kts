@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    //Serialization
+    kotlin("plugin.serialization") version "2.1.10"
 }
 
 kotlin {
@@ -25,6 +27,11 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            //Client HTTP for Android
+            /*implementation(libs.ktor.client.android)*/
+            //Koin implementation for Android
+            implementation("io.insert-koin:koin-android:4.0.1")
+            implementation("io.insert-koin:koin-androidx-compose:4.0.1")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -35,6 +42,20 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
+
+            //Common Ktor Client Implementation
+            // TODO Check if those are actual common or Desktop
+            /*
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.negotation)
+            implementation(libs.ktor.serialization.kotlinx.json)*/
+
+            //Navigation
+            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha11")
+            //Icons
+            implementation("org.jetbrains.compose.material:material-icons-extended:1.5.0")
+
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
