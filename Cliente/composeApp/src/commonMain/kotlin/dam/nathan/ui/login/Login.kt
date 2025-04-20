@@ -33,6 +33,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            /* TODO make this text visible to Android */
             Text(
                 text = "Bienvenido a ListenThis",
                 style = MaterialTheme.typography.headlineLarge,
@@ -42,7 +43,7 @@ fun LoginScreen(
             Text(
                 text = "Iniciar sesión",
                 style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(16.dp)
             )
 
@@ -74,8 +75,8 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (valid) {
-                Text(text = "Usuario o contrasñea incorrectos",
-                    color = MaterialTheme.colorScheme.primary)
+                Text(text = "Usuario o contraseña incorrectos",
+                    color = MaterialTheme.colorScheme.error)
             }
 
             Row {
@@ -94,13 +95,13 @@ fun LoginScreen(
                     onClick = {
                         register()
                     },
-                    enabled = enabled,
                 ) {
                     Text("¿No tienes cuenta? Registrate aquí.")
                 }
 
             }
 
+            /* TODO Make this button only appear in the desktop version */
             Button(
                 onClick = {
                     changeTheme()
