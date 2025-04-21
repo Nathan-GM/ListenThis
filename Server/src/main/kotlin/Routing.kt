@@ -1,24 +1,67 @@
 package dam.nathan
 
 import at.favre.lib.crypto.bcrypt.BCrypt
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import dam.nathan.classes.Connection
 import dam.nathan.classes.UserDatabase
 import dam.nathan.classes.UserSerializable
 import dam.nathan.repositories.UserRepository
 import dam.nathan.responses.UserResponse
+import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
 import io.ktor.serialization.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.http.content.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.bson.types.ObjectId
+import java.util.*
 
 fun Application.configureRouting() {
 
     val connection = Connection()
     val repositoryUser = UserRepository(connection)
+
+    val env = dotenv{
+        directory = "./"
+        filename = "information.env"
+    }
+
+    val myRealm = env["JWT_REALM"]
+    val secret = env["JWT_SECRET"]
+    val issuer = env["JWT_ISSUER"]
+    val audience = env["JWT_AUDIENCE"]
+
+    install(Authentication) {
+        jwt("jwt-auth") {
+            realm = myRealm
+
+            verifier(
+                JWT
+                    .require(Algorithm.HMAC256(secret))
+                    .withAudience(audience)
+                    .withIssuer(issuer)
+                    .build())
+
+            validate { credential ->
+                if (credential.payload.getClaim("username").asString() != "") {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
+            }
+
+            challenge { defaultScheme, realm ->
+                call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has already expired.")
+            }
+
+
+        }
+    }
 
     routing {
         //Endpoint that will return all users -> TMP function.
@@ -175,6 +218,35 @@ fun Application.configureRouting() {
                 }
             }
 
+        }
+
+        post("login") {
+            try {
+                val user = call.receive<UserSerializable>()
+                val userDB = repositoryUser.getByUsername(user.username)
+                if (userDB == null) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                } else {
+                    val passBD = BCrypt.verifyer().verify(user.password.toCharArray(), userDB.password)
+                    if (passBD.verified) {
+                        val token = JWT.create()
+                            .withAudience(audience)
+                            .withIssuer(issuer)
+                            .withClaim("username", user.username)
+                            .withExpiresAt(Date(System.currentTimeMillis() + (1*24*60*1000)))
+                            .sign(Algorithm.HMAC256(secret))
+                        call.respond(hashMapOf("token" to token))
+                    } else {
+                        call.respond(HttpStatusCode.Unauthorized)
+                    }
+                }
+            } catch (e: IllegalStateException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
+            } catch (e: JsonConvertException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
+            }
         }
         // Static plugin. Try to access `/static/index.html`
         staticResources("/static", "static")
