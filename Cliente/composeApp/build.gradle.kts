@@ -52,8 +52,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtime.compose)
 
             //Common Ktor Client Implementation
-            // TODO Check if those are actual common or Desktop
-
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.content.negotiation)
@@ -80,6 +78,9 @@ kotlin {
             //Ktor serialization
             implementation("io.ktor:ktor-serialization-gson:3.1.0")
             implementation("com.google.code.gson:gson:2.12.1")
+
+            //env files usage implementation
+            implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
 
 
         }

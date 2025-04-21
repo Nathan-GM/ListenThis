@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 fun LoginScreen(
     isDarkModeOn: Boolean,
     register: () -> Unit,
-    login: () -> Unit,
+    login: ((String, String) -> Boolean)? = null,
     changeTheme: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
@@ -82,7 +82,13 @@ fun LoginScreen(
             Row {
                 Button(
                     onClick = {
-                        login()
+                        if (login != null) {
+                            if (login(username, password)) {
+                                valid = false
+                            } else {
+                                valid = true
+                            }
+                        }
                     },
                     enabled = enabled,
                 ) {

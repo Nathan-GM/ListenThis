@@ -2,13 +2,47 @@ package dam.nathan.models.viewmodels
 
 import androidx.lifecycle.ViewModel
 import dam.nathan.models.User
+import dam.nathan.models.UserwithToken
 import dam.nathan.models.repositories.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.runBlocking
 
 
 class UserViewModel(val repository : UserRepository) : ViewModel() {
-    private var _user = MutableStateFlow(User())
-    var user : StateFlow<User> = _user
+    private var _user = MutableStateFlow(UserwithToken())
+    private var _token = MutableStateFlow(String())
+    var user: StateFlow<UserwithToken> = _user
+
+
+    fun getUser() : UserwithToken {
+        return user.value
+    }
+
+    fun setUser(user : User) {
+        println("iniciando set user")
+        val databaseUser = runBlocking {
+            repository.getUser(user)
+        }
+        if (databaseUser != null) {
+            val userWithToken = UserwithToken(
+                user = databaseUser,
+                token = _token.value
+            )
+            _user.value = userWithToken
+        }
+    }
+
+    fun login(user: User) : Boolean {
+        var result = runBlocking {
+            repository.login(user)
+        }
+        if (result != "") {
+            _token.value = result
+            return true
+        } else {
+            return false
+        }
+    }
 
 }

@@ -25,3 +25,21 @@ data class User(
         "", "", "", "", ""
     )
 }
+
+
+/**
+ * Class that will contain the user with its token. Will mainly be used for the interactions with the application
+ *
+ * @param user User information.
+ * @param token User tokens. Will be used to validate the user through the application
+ *
+ * @constructor Blank constructor in case it's ever needed.
+ *
+ * @see User
+ *
+ * @author Nathan Gonzalez Mercado
+ */
+data class UserwithToken(
+    val user : User? = null,
+    val token: String? = ""
+)
