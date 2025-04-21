@@ -89,6 +89,41 @@ fun Application.configureRouting() {
             }
 
             /**
+             * Endpoint that will return the user information based on their username
+             */
+            get("/user/{username}") {
+                val username = call.parameters["username"]
+                if (username == null) {
+                    call.respond(HttpStatusCode.BadRequest)
+                } else {
+                    val user = repositoryUser.getByUsername(username)
+                    if (user == null) {
+                        call.respond(HttpStatusCode.NotFound)
+                    } else {
+                        /* TODO Conversion of avatar to base64 */
+                        val userResponse = UserSerializable(
+                            id = user.id.toString(),
+                            username = user.username,
+                            password = user.password,
+                            avatar = user.avatar,
+                            biography = user.biography,
+                        )
+
+                        if (userResponse == null) {
+                            call.respond(HttpStatusCode.NotFound)
+                        } else {
+                            call.respond(
+                                HttpStatusCode.OK,
+                                userResponse
+                            )
+                        }
+                    }
+                }
+            }
+
+
+
+            /**
              * Endpoint that will create a new user. If the username's already taken, it will return a conflict error.
              */
             post("/") {
