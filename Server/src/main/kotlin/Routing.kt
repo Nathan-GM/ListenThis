@@ -283,6 +283,12 @@ fun Application.configureRouting() {
                 call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
             }
         }
+
+        // TODO Create posts endpoints and test them
+        route("posts") {
+
+        }
+
         // Static plugin. Try to access `/static/index.html`
         staticResources("/static", "static")
     }
