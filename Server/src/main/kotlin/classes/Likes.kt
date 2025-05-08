@@ -20,7 +20,7 @@ data class LikesSerializable(
 
 /**
  * Class that will save the users id in the database as an ObjectID.
- * @param userId User's id who liked a post
+ * @param _userId User's id who liked a post
  *
  * @see PostsDatabase
  *
@@ -28,5 +28,5 @@ data class LikesSerializable(
  */
 data class LikesDatabase(
     @BsonId
-    val userId: ObjectId,
+    val _userId: ObjectId,
 )

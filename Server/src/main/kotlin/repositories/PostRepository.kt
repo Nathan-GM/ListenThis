@@ -60,7 +60,7 @@ class PostRepository(private val connection : Connection) : APostRepository() {
             val query = Filters.eq("_id", item._id)
             // Others things about the post shouldn't be changed
             var updated = Updates.combine(
-                Updates.set("description", item.description),
+                Updates.set("content", item.content),
                 Updates.set("comments", item.comments),
                 Updates.set("likes", item.likes),
             )
@@ -78,7 +78,7 @@ class PostRepository(private val connection : Connection) : APostRepository() {
             val query = Filters.eq("_id", id)
             // Others things about the post shouldn't be changed
             var updated = Updates.combine(
-                Updates.set("description", item.description),
+                Updates.set("content", item.content),
                 Updates.set("comments", item.comments),
                 Updates.set("likes", item.likes),
             )

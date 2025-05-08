@@ -3,11 +3,12 @@ package dam.nathan
 import at.favre.lib.crypto.bcrypt.BCrypt
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import dam.nathan.classes.Connection
-import dam.nathan.classes.UserDatabase
-import dam.nathan.classes.UserSerializable
+import dam.nathan.classes.*
+import dam.nathan.repositories.PostRepository
 import dam.nathan.repositories.UserRepository
 import dam.nathan.responses.UserResponse
+import dam.nathan.services.loadAvatar
+import dam.nathan.services.saveAvatar
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
 import io.ktor.serialization.*
@@ -21,10 +22,13 @@ import io.ktor.server.routing.*
 import org.bson.types.ObjectId
 import java.util.*
 
+//TODO Check avatar service, its not working properly
+
 fun Application.configureRouting() {
 
     val connection = Connection()
     val repositoryUser = UserRepository(connection)
+    val repositoryPost = PostRepository(connection)
 
     val env = dotenv{
         directory = "./"
@@ -100,12 +104,15 @@ fun Application.configureRouting() {
                     if (user == null) {
                         call.respond(HttpStatusCode.NotFound)
                     } else {
-                        /* TODO Conversion of avatar to base64 */
+                        var avatar = ""
+                        if (user.avatar != null) {
+                            avatar = loadAvatar(user.avatar)
+                        }
                         val userResponse = UserSerializable(
                             id = user.id.toString(),
                             username = user.username,
                             password = user.password,
-                            avatar = user.avatar,
+                            avatar = avatar,
                             biography = user.biography,
                         )
 
@@ -143,14 +150,19 @@ fun Application.configureRouting() {
                     }
 
                     if (!found) {
-                        /* TODO Implement avatar converters here */
+                        var avatarBase64 = ""
+                        var id =  ObjectId()
+                        if (user.avatar != null && !user.avatar.equals("")) {
+                            avatarBase64 = saveAvatar(user.avatar, id)
+                        }
+
                         val cypherPassword = BCrypt.withDefaults().hashToString(12, user.password.toCharArray())
                         val userDataBase = UserDatabase(
-                            id = ObjectId(),
+                            id = id,
                             username = user.username,
                             password = cypherPassword,
                             biography = user.biography,
-                            avatar = user.avatar
+                            avatar = avatarBase64
                         )
 
                         val result = repositoryUser.add(userDataBase)
@@ -185,6 +197,8 @@ fun Application.configureRouting() {
             /**
              * Endpoint that will update the date related to a user.
              */
+
+            //TODO Add confirmation by token
             put("/{id}") {
                 try {
                     val idParameter = call.parameters["id"]!!
@@ -193,13 +207,29 @@ fun Application.configureRouting() {
                         call.respond(HttpStatusCode.BadRequest)
                     }
                     val id = ObjectId(idParameter)
-                    /* TODO Before creating the UserDatabase make sure that the password is encrypted. if not encrypt */
+                    val user = repositoryUser.getById(id)
+                    var avatarBase64 = userParameter.avatar
+
+                    if (user == null) {
+                        call.respond(HttpStatusCode.NotFound)
+                    }
+
+                    println(userParameter)
+                    println(user)
+
+                    if (user?.avatar != userParameter.avatar && (userParameter.avatar != null && !user?.avatar.equals(""))) {
+                        println("Entra en avatar")
+                        avatarBase64 = saveAvatar(userParameter.avatar, id)
+                    }
+                    println("espues de avatar")
+
+
                     val userDB = UserDatabase(
                         id = ObjectId(idParameter),
                         username = userParameter.username,
                         password = userParameter.password,
                         biography = userParameter.biography,
-                        avatar = userParameter.avatar
+                        avatar = avatarBase64
                     )
 
                     repositoryUser.updatebyId(userDB, id)
@@ -226,6 +256,8 @@ fun Application.configureRouting() {
             /**
              * Endpoint that will delete a user based on the ID.
              */
+
+            //TODO add the confirmation by token
             delete("/{id}") {
                 try {
                     val idParameter = call.parameters["id"]!!
@@ -284,12 +316,140 @@ fun Application.configureRouting() {
             }
         }
 
-        // TODO Create posts endpoints and test them
         route("posts") {
+            get("/") {
+                val posts = repositoryPost.getAll()
+                val response = mutableListOf<PostsSerializables>()
 
+                for (post in posts) {
+                    var media = ""
+                    if (post.media != null && post.media.isNotBlank()) {
+                        // TODO convert media to Base 64 right here
+                        // media = imageToBase64(post.image)
+                    }
+                    if (media == "" && media.isBlank()) {
+                        media = post.media ?: ""
+                    }
+
+                    var postComments = mutableListOf<CommentsSerializable>()
+                    var postLikes = mutableListOf<LikesSerializable>()
+
+                    for (comment in post.comments) {
+                        val commentSerializable = CommentsSerializable(
+                            authorId = comment._authorId.toString(),
+                            comment = comment.comment,
+                            timeOfPost = comment.timeOfPost,
+                        )
+                        postComments.add(commentSerializable)
+                    }
+
+                    for (like in post.likes) {
+                        val likeSerializable = LikesSerializable(
+                            userId = like._userId.toString()
+                        )
+                        postLikes.add(likeSerializable)
+                    }
+
+                    val postSerializable = PostsSerializables(
+                        id = post._id.toString(),
+                        author = post.author.toString(),
+                        media = media,
+                        content = post.content,
+                        timestamp = post.timestamp,
+                        genre = post.genre.toString(),
+                        comments = postComments,
+                        likes = postLikes
+                    )
+
+                    response.add(postSerializable)
+
+                }
+            }
+
+            authenticate("jwt-auth") {
+                post("/") {
+                    try {
+                        val post = call.receive<PostsSerializables>()
+                        val principal = call.principal<JWTPrincipal>()
+
+                        val username = principal!!.payload.getClaim("username").asString()
+                        val expirationDate = principal.expiresAt?.time?.minus(System.currentTimeMillis().toInt())
+
+                        val userId = repositoryUser.getByUsername(username)!!.id.toString()
+
+                        if (expirationDate != null && expirationDate < 0) {
+                            call.respond(HttpStatusCode.Unauthorized)
+                        } else {
+                            if (!userId.equals(post.author)) {
+                                call.respond(HttpStatusCode.Unauthorized)
+                            }
+                            var mediaFile = ""
+                            if (post.media != null && post.media.isNotBlank()) {
+                                // TODO Store the media file on a server folder
+                            }
+
+                            val postDB = PostsDatabase(
+                                _id = ObjectId(),
+                                author = ObjectId(post.author),
+                                media = mediaFile,
+                                content = post.content,
+                                timestamp = post.timestamp ?: System.currentTimeMillis(),
+                                genre = ObjectId(post.genre),
+                                comments = mutableListOf(),
+                                likes = mutableListOf()
+                            )
+
+                            val result = repositoryPost.add(postDB)
+                            if (result == null) {
+                                call.respond(HttpStatusCode.InternalServerError)
+                            } else {
+
+                                var postComments = mutableListOf<CommentsSerializable>()
+                                var postLikes = mutableListOf<LikesSerializable>()
+
+                                for (comment in postDB.comments) {
+                                    val commentSerializable = CommentsSerializable(
+                                        authorId = comment._authorId.toString(),
+                                        comment = comment.comment,
+                                        timeOfPost = comment.timeOfPost,
+                                    )
+                                    postComments.add(commentSerializable)
+                                }
+
+                                for (like in postDB.likes) {
+                                    val likeSerializable = LikesSerializable(
+                                        userId = like._userId.toString()
+                                    )
+                                    postLikes.add(likeSerializable)
+                                }
+
+                                val answer = PostsSerializables(
+                                    id = postDB._id.toString(),
+                                    author = postDB.author.toString(),
+                                    media = postDB.media,
+                                    content = post.content,
+                                    timestamp = post.timestamp,
+                                    genre = postDB.genre.toString(),
+                                    comments = postComments,
+                                    likes = postLikes
+                                )
+
+                                call.respond(
+                                    HttpStatusCode.Created,
+                                    answer
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
+                    }
+                }
+            }
+
+            // Static plugin. Try to access `/static/index.html`
+            staticResources("/static", "static")
         }
-
-        // Static plugin. Try to access `/static/index.html`
-        staticResources("/static", "static")
     }
+
+
 }

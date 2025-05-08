@@ -41,3 +41,6 @@ out/
 
 ### Environment Files ###
 *.env
+
+### User avatars and media ###
+/media
