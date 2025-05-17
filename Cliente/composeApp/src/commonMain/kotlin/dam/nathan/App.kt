@@ -40,12 +40,16 @@ fun App() {
                         username, password ->
                         val user = User(username = username, password = password)
                         val result = vm.login(user)
-                        if (result) {
+                        if (result.equals("valid")) {
                             vm.setUser(user)
                             navController.navigate("main")
-                            true
+                            "valid"
                         } else {
-                            false
+                            if (result.equals("timeout")) {
+                                "timeout"
+                            } else {
+                                "error"
+                            }
                         }
                     },
                     changeTheme = {

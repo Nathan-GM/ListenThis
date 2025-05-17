@@ -33,15 +33,18 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
         }
     }
 
-    fun login(user: User) : Boolean {
+    fun login(user: User) : String {
         var result = runBlocking {
             repository.login(user)
         }
-        if (result != "") {
+        if (result != "" && result != "timedout") {
             _token.value = result
-            return true
-        } else {
-            return false
+            return "valid"
+        } else if (result.equals("timedout")) {
+            return "timeout"
+        }
+        else {
+            return "error"
         }
     }
 

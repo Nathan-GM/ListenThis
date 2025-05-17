@@ -7,3 +7,11 @@ class AndroidPlatform : Platform {
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform()
+
+// TODO Do thhe actual function for android
+actual fun ib64(
+    onChange: (String) -> Unit,
+    initString: String?=null
+) {
+
+}

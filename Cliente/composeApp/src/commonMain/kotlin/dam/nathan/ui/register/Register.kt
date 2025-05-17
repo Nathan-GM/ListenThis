@@ -13,6 +13,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dam.nathan.ib64
 import dam.nathan.models.User
 import dam.nathan.models.repositories.UserRepository
 import io.ktor.http.*
@@ -27,6 +28,7 @@ fun RegisterScreen(
     var confirmationPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var showConfirmationPassword by remember { mutableStateOf(false) }
+    var avatar = remember { mutableStateOf("") }
     var conflict by remember { mutableStateOf(false) }
     var to by remember { mutableStateOf(false) }
     var enabled =
@@ -114,6 +116,12 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            ib64(
+                onChange = {
+                    avatar.value = it
+                }
+            )
+
             if (conflict) {
                 if (to) {
                     Text(
@@ -135,19 +143,23 @@ fun RegisterScreen(
                             var u = User(
                                 username = username,
                                 password = password,
+                                avatar = avatar.value
                             )
                             userRepository.register(u)
                         }
 
-                        System.err.println(result.status)
-                        if (result.status == HttpStatusCode.Conflict) {
+                        System.err.println(result)
+                        if (result == HttpStatusCode.Conflict) {
                             conflict = true
                             to = false
-                        } else if (result.status == HttpStatusCode.Created) {
+                        } else if (result == HttpStatusCode.Created) {
                             conflict = false
                             to = false
                             goLogin()
-                        } else if (result.status == HttpStatusCode.NotFound) {
+                        } else if (result == HttpStatusCode.NotFound) {
+                            conflict = true
+                            to = true
+                        } else {
                             conflict = true
                             to = true
                         }

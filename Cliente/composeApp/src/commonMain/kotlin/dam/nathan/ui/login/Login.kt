@@ -10,19 +10,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun LoginScreen(
     isDarkModeOn: Boolean,
     register: () -> Unit,
-    login: ((String, String) -> Boolean)? = null,
+    login: ((String, String) -> String)? = null,
     changeTheme: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var valid by remember { mutableStateOf(false) }
+    var timeout by remember { mutableStateOf(false) }
     var enabled = username.isNotBlank() && password.isNotBlank()
 
     Box(
@@ -79,12 +81,19 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.error)
             }
 
+            if (timeout) {
+                Text(text = "No se pudo conectar al servidor",
+                    color = MaterialTheme.colorScheme.error)
+            }
+
             Row {
                 Button(
                     onClick = {
                         if (login != null) {
-                            if (login(username, password)) {
+                            if (login(username, password).equals("valid")) {
                                 valid = false
+                            } else if (login(username, password).equals("timeout")){
+                                timeout = true
                             } else {
                                 valid = true
                             }
@@ -102,10 +111,16 @@ fun LoginScreen(
                         register()
                     },
                 ) {
-                    Text("¿No tienes cuenta? Registrate aquí.")
+                    Text(
+                        text = "¿No tienes cuenta? \n Registrate aquí.",
+                        textAlign = TextAlign.Center,
+
+                    )
                 }
 
             }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             /* TODO Make this button only appear in the desktop version */
             Button(
