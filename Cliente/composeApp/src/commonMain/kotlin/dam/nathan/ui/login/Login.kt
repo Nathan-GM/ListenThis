@@ -12,6 +12,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dam.nathan.darkMode
 
 @Composable
 fun LoginScreen(
@@ -94,6 +95,7 @@ fun LoginScreen(
                                 valid = false
                             } else if (login(username, password).equals("timeout")){
                                 timeout = true
+                                valid = false
                             } else {
                                 valid = true
                             }
@@ -122,15 +124,11 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            /* TODO Make this button only appear in the desktop version */
-            Button(
-                onClick = {
-                    changeTheme()
-                },
-            ) {
-                val icon = if (!isDarkModeOn) Icons.Default.DarkMode else Icons.Default.LightMode
-                Icon(icon, contentDescription = "")
-            }
+            darkMode(
+                changeTheme = changeTheme,
+                isDarkModeOn = isDarkModeOn,
+            )
+
         }
     }
 

@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.window.core.layout.WindowWidthSizeClass
+import dam.nathan.ui.main.main.MainPage
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 enum class Destinations(
@@ -106,7 +107,7 @@ fun MainScreen(
                 ) {
                     when (destinationSelected.value) {
                         Destinations.MAIN -> {
-                            println("MAIN")
+                            MainPage()
                         }
                         Destinations.POSTS -> {
                             println("PUBLICACIONES")

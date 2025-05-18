@@ -8,6 +8,8 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
@@ -97,5 +99,18 @@ actual fun ib64(
             contentDescription = "Base 64 image",
             modifier = Modifier.size(500.dp)
         )
+    }
+}
+
+
+@Composable
+actual fun darkMode(changeTheme: () -> Unit, isDarkModeOn: Boolean) {
+    Button(
+        onClick = {
+            changeTheme()
+        },
+    ) {
+        val icon = if (!isDarkModeOn) Icons.Default.DarkMode else Icons.Default.LightMode
+        androidx.compose.material3.Icon(icon, contentDescription = "")
     }
 }
