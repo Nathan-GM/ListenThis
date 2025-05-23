@@ -14,17 +14,20 @@ import dam.nathan.ui.register.RegisterScreen
 import dam.nathan.ui.theme.AppTheme
 import io.github.cdimascio.dotenv.Dotenv
 import io.github.cdimascio.dotenv.internal.ClasspathHelper
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 @Preview
 fun App() {
     var dark = remember { mutableStateOf(true) }
+    val vm : UserViewModel = koinViewModel()
     AppTheme(
         dark = dark.value,
     ) {
         val navController = rememberNavController()
-        val vm : UserViewModel = UserViewModel(UserRepository())
+
 
         NavHost(
             navController = navController,
@@ -37,7 +40,7 @@ fun App() {
                         navController.navigate("register")
                     },
                     login = {
-                        username, password ->
+                        username, password, scope ->
                         val user = User(username = username, password = password)
                         val result = vm.login(user)
                         if (result.equals("valid")) {

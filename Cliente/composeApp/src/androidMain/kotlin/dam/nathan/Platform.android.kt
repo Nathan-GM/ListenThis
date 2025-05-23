@@ -19,7 +19,7 @@ actual fun ib64(
 }
 
 @Composable
-actual fun darMode(
+actual fun darkMode(
     changeTheme: () -> Unit,
     isDarkModeOn: Boolean
 ) {

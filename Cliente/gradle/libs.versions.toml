@@ -16,6 +16,9 @@ junit = "4.13.2"
 kotlin = "2.1.10"
 kotlinx-coroutines = "1.10.1"
 
+#Koin version
+koin = "4.0.0"
+
 #Used to provide the clients to connect to the ktor server
 ktor = "3.1.0"
 
@@ -43,6 +46,15 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+
+# Koin and VM related libs
+
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+koin-bom = { module = "io.insert-koin:koin-bom", version="4.0.1"}
+koin-core = { module = "io.insert-koin:koin-core" }
+koin-compose = { module = "io.insert-koin:koin-compose" }
+koin-compose-viewModel = { module = "io.insert-koin:koin-compose-viewmodel" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

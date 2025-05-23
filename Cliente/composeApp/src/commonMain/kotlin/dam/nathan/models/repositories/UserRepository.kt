@@ -4,6 +4,7 @@ import dam.nathan.models.User
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -12,6 +13,7 @@ import io.ktor.http.*
 import io.ktor.serialization.gson.*
 import kotlinx.serialization.json.Json
 import java.net.ConnectException
+import java.net.SocketTimeoutException
 import java.util.Locale
 
 
@@ -23,6 +25,9 @@ class UserRepository {
                 setPrettyPrinting()
                 serializeNulls()
             }
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 5000
         }
     }
 
@@ -71,6 +76,8 @@ class UserRepository {
                 return ""
             }
         } catch (e: ConnectException) {
+            return "timedout"
+        } catch (e: SocketTimeoutException) {
             return "timedout"
         }
     }

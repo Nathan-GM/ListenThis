@@ -8,17 +8,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dam.nathan.darkMode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     isDarkModeOn: Boolean,
     register: () -> Unit,
-    login: ((String, String) -> String)? = null,
+    login: (suspend (String, String, CoroutineScope) -> String)? = null,
     changeTheme: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
@@ -27,11 +30,15 @@ fun LoginScreen(
     var valid by remember { mutableStateOf(false) }
     var timeout by remember { mutableStateOf(false) }
     var enabled = username.isNotBlank() && password.isNotBlank()
+    var waiting by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -56,6 +63,7 @@ fun LoginScreen(
                 label = { Text("Usuario") },
                 placeholder = { Text("Introduce tu usuario") },
                 singleLine = true,
+                enabled = waiting == false
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -73,7 +81,9 @@ fun LoginScreen(
                         val icon = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff
                         Icon(icon, contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña")
                     }
-                },)
+                },
+                enabled = waiting == false
+                )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -86,18 +96,29 @@ fun LoginScreen(
                 Text(text = "No se pudo conectar al servidor",
                     color = MaterialTheme.colorScheme.error)
             }
-
+            if (waiting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.width(100.dp),
+                    )
+            }
+            else {
             Row {
                 Button(
                     onClick = {
                         if (login != null) {
-                            if (login(username, password).equals("valid")) {
-                                valid = false
-                            } else if (login(username, password).equals("timeout")){
-                                timeout = true
-                                valid = false
-                            } else {
-                                valid = true
+                            scope.launch {
+                                waiting = true
+                                if (login(username, password, scope).equals("valid")) {
+                                    valid = false
+                                    waiting = false
+                                } else if (login(username, password, scope).equals("timeout")) {
+                                    timeout = true
+                                    valid = false
+                                    waiting = false
+                                } else {
+                                    valid = true
+                                    waiting = false
+                                }
                             }
                         }
                     },
@@ -129,6 +150,7 @@ fun LoginScreen(
                 isDarkModeOn = isDarkModeOn,
             )
 
+            }
         }
     }
 

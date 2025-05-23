@@ -37,8 +37,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.window.core.layout.WindowWidthSizeClass
+import dam.nathan.models.viewmodels.UserViewModel
 import dam.nathan.ui.main.main.MainPage
+import dam.nathan.ui.main.profile.Profile
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
 enum class Destinations(
     val label: String,
@@ -47,7 +50,7 @@ enum class Destinations(
     val visibleCompact: Boolean
 ) {
     MAIN("Inicio", Icons.Default.Home, "Main Screen", true),
-    POSTS("Publicaciones", Icons.Default.Public, "Main Screen", true), // TODO Change Icon
+    POSTS("Posts", Icons.Default.Public, "Main Screen", true), // TODO Change Icon
     GENRES("Géneros", Icons.Default.MusicNote, "Main Screen", true),
     PROFILE("Mi perfil", Icons.Default.Person, "Main Screen", true),
     CONFIG("Configuración", Icons.Default.Settings, "Main Screen", false),
@@ -64,6 +67,9 @@ fun MainScreen(
 
     var destinationSelected = remember { mutableStateOf(Destinations.MAIN) }
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    var userVM : UserViewModel = koinViewModel()
+
+    println(userVM.user)
 
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -116,7 +122,7 @@ fun MainScreen(
                             println("GÉNEROS")
                         }
                         Destinations.PROFILE -> {
-                            println("PERFIL")
+                            Profile()
                         }
                         Destinations.CONFIG -> {
                             println("CONFIG")

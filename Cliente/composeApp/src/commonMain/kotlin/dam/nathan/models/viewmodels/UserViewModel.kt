@@ -1,5 +1,6 @@
 package dam.nathan.models.viewmodels
 
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.ViewModel
 import dam.nathan.models.User
 import dam.nathan.models.UserwithToken
@@ -33,10 +34,9 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
         }
     }
 
-    fun login(user: User) : String {
-        var result = runBlocking {
-            repository.login(user)
-        }
+    suspend fun login(user: User) : String {
+        var result = repository.login(user)
+
         if (result != "" && result != "timedout") {
             _token.value = result
             return "valid"
