@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import dam.nathan.models.User
 import dam.nathan.models.UserwithToken
 import dam.nathan.models.repositories.UserRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
@@ -20,11 +21,8 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
         return user.value
     }
 
-    fun setUser(user : User) {
-        println("iniciando set user")
-        val databaseUser = runBlocking {
-            repository.getUser(user)
-        }
+    suspend fun setUser(user : User) {
+        val databaseUser = repository.getUser(user)
         if (databaseUser != null) {
             val userWithToken = UserwithToken(
                 user = databaseUser,
@@ -36,7 +34,6 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
 
     suspend fun login(user: User) : String {
         var result = repository.login(user)
-
         if (result != "" && result != "timedout") {
             _token.value = result
             return "valid"

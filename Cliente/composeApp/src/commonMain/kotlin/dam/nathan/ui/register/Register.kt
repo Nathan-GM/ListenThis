@@ -17,6 +17,7 @@ import dam.nathan.ib64
 import dam.nathan.models.User
 import dam.nathan.models.repositories.UserRepository
 import io.ktor.http.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 @Composable
@@ -41,7 +42,10 @@ fun RegisterScreen(
                         && (password.contains("[0-9]".toRegex()) // numbers
                         || password.contains("[!\"#$%&'()*+,-./:;\\\\<=>?@\\[\\]^_`{|}~]".toRegex()) //special character
                         )
-                )
+                        )
+
+    var waiting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     var userRepository = UserRepository()
 
@@ -81,8 +85,12 @@ fun RegisterScreen(
                     IconButton(
                         onClick = { showPassword = !showPassword }
                     ) {
-                        val icon = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                        Icon(icon, contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña")
+                        val icon =
+                            if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                        Icon(
+                            icon,
+                            contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
+                        )
                     }
                 }
             )
@@ -98,8 +106,12 @@ fun RegisterScreen(
                     IconButton(
                         onClick = { showConfirmationPassword = !showConfirmationPassword }
                     ) {
-                        val icon = if (showConfirmationPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                        Icon(icon, contentDescription = if (showConfirmationPassword) "Ocultar confirmación de contraseña" else "Mostrar confirmación de contraseña")
+                        val icon =
+                            if (showConfirmationPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                        Icon(
+                            icon,
+                            contentDescription = if (showConfirmationPassword) "Ocultar confirmación de contraseña" else "Mostrar confirmación de contraseña"
+                        )
                     }
                 }
             )
@@ -136,50 +148,60 @@ fun RegisterScreen(
                 }
             }
 
-            Row {
-                Button(
-                    onClick = {
-                        val result = runBlocking {
-                            var u = User(
-                                username = username,
-                                password = password,
-                                avatar = avatar.value
-                            )
-                            userRepository.register(u)
-                        }
+            if (waiting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.width(100.dp)
+                )
+            } else {
+                Row {
+                    Button(
+                        onClick = {
+                            waiting = true
+                            scope.launch {
+                                var u = User(
+                                    username = username,
+                                    password = password,
+                                    avatar = avatar.value
+                                )
+                                val result = userRepository.register(u)
+                                System.err.println(result)
+                                if (result == HttpStatusCode.Conflict) {
+                                    conflict = true
+                                    to = false
+                                    waiting = false
+                                } else if (result == HttpStatusCode.Created) {
+                                    conflict = false
+                                    to = false
+                                    waiting = false
+                                    goLogin()
+                                } else if (result == HttpStatusCode.NotFound) {
+                                    conflict = true
+                                    to = true
+                                    waiting = false
+                                } else {
+                                    conflict = true
+                                    to = true
+                                    waiting = false
+                                }
+                            }
+                        },
+                        enabled = enabled,
+                    ) {
+                        Text("Registrarse")
+                    }
 
-                        System.err.println(result)
-                        if (result == HttpStatusCode.Conflict) {
-                            conflict = true
-                            to = false
-                        } else if (result == HttpStatusCode.Created) {
-                            conflict = false
-                            to = false
+                    Spacer(Modifier.width(16.dp))
+
+                    Button(
+                        onClick = {
                             goLogin()
-                        } else if (result == HttpStatusCode.NotFound) {
-                            conflict = true
-                            to = true
-                        } else {
-                            conflict = true
-                            to = true
-                        }
-                    },
-                    enabled = enabled,
-                ) {
-                    Text("Registrarse")
+                        },
+                    ) {
+                        Text("Volver")
+                    }
                 }
 
-                Spacer(Modifier.width(16.dp))
-
-                Button(
-                    onClick = {
-                        goLogin()
-                    },
-                ) {
-                    Text("Volver")
-                }
             }
-
         }
     }
 }

@@ -1,5 +1,7 @@
 package dam.nathan.models
 
+import kotlinx.serialization.Serializable
+
 /**
  * Class related to users. It contains the username, the cypher password,
  * the avatar the user has and the biography
@@ -14,6 +16,7 @@ package dam.nathan.models
  *
  * @author Nathan Gonzalez Mercado
  */
+@Serializable
 data class User(
     val id: String? = null,
     val username: String,

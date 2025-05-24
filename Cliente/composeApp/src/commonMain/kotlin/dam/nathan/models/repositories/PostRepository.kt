@@ -1,10 +1,12 @@
 package dam.nathan.models.repositories
 
-import dam.nathan.models.User
+import dam.nathan.models.Post
+import dam.nathan.models.UserwithToken
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -18,9 +20,8 @@ import kotlinx.serialization.json.Json
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
+class PostRepository {
 
-class UserRepository {
-    /* Client that will connect to the KTOR server */
     val client = HttpClient() {
         install(ContentNegotiation) {
             gson {
@@ -46,51 +47,35 @@ class UserRepository {
     }
 
     val serverLocation = env["SERVER_IP"]
-    val urlUsers = "${serverLocation}${env["USERS_ROUTE"]}"
-    val urlLogin = "$serverLocation${env["LOGIN_ROUTE"]}"
+    val urlPosts = "${serverLocation}${env["POSTS_ROUTE"]}"
 
-    suspend fun register(u: User) : HttpStatusCode {
+    suspend fun getPosts() : MutableList<Post>? {
         try {
-            val response: HttpResponse = client.post(urlUsers) {
+            val response : HttpResponse = client.get(urlPosts) {
                 contentType(ContentType.Application.Json)
-                setBody(
-                    u
-                )
             }
-            return response.status
-        } catch (e: ConnectException) {
-            return HttpStatusCode.RequestTimeout
-        }
-    }
-
-    suspend fun login(u: User) : String {
-        try {
-            val response: HttpResponse = client.post(urlLogin) {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    u
-                )
-            }
+            println(response.status)
             if (response.status == HttpStatusCode.OK) {
-                val decoded = Json.decodeFromString<HashMap<String, String>>(response.bodyAsText())
-                return decoded["token"].toString()
+                return Json.decodeFromString<MutableList<Post>>(response.bodyAsText())
             } else {
-                return ""
+                return null
             }
         } catch (e: ConnectException) {
-            return "timedout"
+            return null
         } catch (e: SocketTimeoutException) {
-            return "timedout"
+            return null
         }
     }
 
-    suspend fun getUser(u: User): User? {
+    suspend fun createPost(post: Post, token: String) : Post?{
         try {
-            val response: HttpResponse = client.get("${urlUsers}user/${u.username}") {
+            val response : HttpResponse = client.post(urlPosts) {
                 contentType(ContentType.Application.Json)
+                setBody(post)
+                bearerAuth(token)
             }
-            if (response.status == HttpStatusCode.OK) {
-                return Json.decodeFromString<User>(response.bodyAsText())
+            if (response.status == HttpStatusCode.Created) {
+                return Json.decodeFromString<Post>(response.bodyAsText())
             } else {
                 return null
             }

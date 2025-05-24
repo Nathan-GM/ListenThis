@@ -4,11 +4,14 @@ import at.favre.lib.crypto.bcrypt.BCrypt
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import dam.nathan.classes.*
+import dam.nathan.repositories.GenreRepository
 import dam.nathan.repositories.PostRepository
 import dam.nathan.repositories.UserRepository
 import dam.nathan.responses.UserResponse
 import dam.nathan.services.loadAvatar
+import dam.nathan.services.loadImageForPost
 import dam.nathan.services.saveAvatar
+import dam.nathan.services.saveImageForPost
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
 import io.ktor.serialization.*
@@ -21,6 +24,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.bson.types.ObjectId
 import java.util.*
+import kotlin.random.Random
 
 //TODO Check avatar service, its not working properly
 
@@ -29,8 +33,9 @@ fun Application.configureRouting() {
     val connection = Connection()
     val repositoryUser = UserRepository(connection)
     val repositoryPost = PostRepository(connection)
+    val repositoryGenre = GenreRepository(connection)
 
-    val env = dotenv{
+    val env = dotenv {
         directory = "./"
         filename = "information.env"
     }
@@ -49,7 +54,8 @@ fun Application.configureRouting() {
                     .require(Algorithm.HMAC256(secret))
                     .withAudience(audience)
                     .withIssuer(issuer)
-                    .build())
+                    .build()
+            )
 
             validate { credential ->
                 if (credential.payload.getClaim("username").asString() != "") {
@@ -89,7 +95,7 @@ fun Application.configureRouting() {
                     )
                     responses.add(response)
                 }
-                call.respond(HttpStatusCode.OK,responses)
+                call.respond(HttpStatusCode.OK, responses)
             }
 
             /**
@@ -129,7 +135,6 @@ fun Application.configureRouting() {
             }
 
 
-
             /**
              * Endpoint that will create a new user. If the username's already taken, it will return a conflict error.
              */
@@ -151,9 +156,12 @@ fun Application.configureRouting() {
 
                     if (!found) {
                         var avatarBase64 = ""
-                        var id =  ObjectId()
+                        var id = ObjectId()
                         if (user.avatar != null && !user.avatar.equals("")) {
                             avatarBase64 = saveAvatar(user.avatar, id)
+                        } else {
+                            val random = Random.nextInt(1, 4)
+                            avatarBase64 = "0_$random.txt"
                         }
 
                         val cypherPassword = BCrypt.withDefaults().hashToString(12, user.password.toCharArray())
@@ -234,8 +242,7 @@ fun Application.configureRouting() {
 
                     repositoryUser.updatebyId(userDB, id)
                     call.respond(HttpStatusCode.NoContent)
-                }
-                catch (e: IllegalStateException) {
+                } catch (e: IllegalStateException) {
                     call.respond(
                         status = HttpStatusCode.BadRequest,
                         message = mapOf("message" to e.localizedMessage)
@@ -300,7 +307,7 @@ fun Application.configureRouting() {
                             .withAudience(audience)
                             .withIssuer(issuer)
                             .withClaim("username", user.username)
-                            .withExpiresAt(Date(System.currentTimeMillis() + (1*24*60*1000)))
+                            .withExpiresAt(Date(System.currentTimeMillis() + (1 * 24 * 60 * 1000)))
                             .sign(Algorithm.HMAC256(secret))
                         call.respond(hashMapOf("token" to token))
                     } else {
@@ -314,6 +321,7 @@ fun Application.configureRouting() {
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
             }
+
         }
 
         route("posts") {
@@ -324,8 +332,7 @@ fun Application.configureRouting() {
                 for (post in posts) {
                     var media = ""
                     if (post.media != null && post.media.isNotBlank()) {
-                        // TODO convert media to Base 64 right here
-                        // media = imageToBase64(post.image)
+                        media = loadImageForPost(post.media)
                     }
                     if (media == "" && media.isBlank()) {
                         media = post.media ?: ""
@@ -360,10 +367,9 @@ fun Application.configureRouting() {
                         comments = postComments,
                         likes = postLikes
                     )
-
                     response.add(postSerializable)
-
                 }
+                call.respond(HttpStatusCode.OK, response)
             }
 
             authenticate("jwt-auth") {
@@ -384,12 +390,13 @@ fun Application.configureRouting() {
                                 call.respond(HttpStatusCode.Unauthorized)
                             }
                             var mediaFile = ""
+                            var id = ObjectId()
                             if (post.media != null && post.media.isNotBlank()) {
-                                // TODO Store the media file on a server folder
+                                mediaFile = saveImageForPost(post.media, id )
                             }
 
                             val postDB = PostsDatabase(
-                                _id = ObjectId(),
+                                _id = id,
                                 author = ObjectId(post.author),
                                 media = mediaFile,
                                 content = post.content,
@@ -448,6 +455,76 @@ fun Application.configureRouting() {
 
             // Static plugin. Try to access `/static/index.html`
             staticResources("/static", "static")
+        }
+
+
+
+        route("genres") {
+            get("/") {
+                val genres = repositoryGenre.getAll()
+                val response = mutableListOf<GenreSerializable>()
+
+                for (genre in genres) {
+                    val genreSerializable = GenreSerializable(
+                        id = genre.id.toString(),
+                        name = genre.name,
+                        color = genre.color,
+                    )
+                    response.add(genreSerializable)
+                }
+
+                call.respond(HttpStatusCode.OK, response)
+            }
+
+            get("/{id}") {
+                val id = call.parameters["id"]
+                if (id == null) {
+                    call.respond(HttpStatusCode.BadRequest)
+                } else {
+                    val genre = repositoryGenre.getById(ObjectId(id))
+                    if (genre == null) {
+                        call.respond(HttpStatusCode.NotFound)
+                    } else {
+                        val genreSerializable = GenreSerializable(
+                            id = genre.id.toString(),
+                            name = genre.name,
+                            color = genre.color,
+                        )
+                        if (genreSerializable == null) {
+                            call.respond(HttpStatusCode.NotFound)
+                        } else {
+                            call.respond(HttpStatusCode.OK, genreSerializable)
+                        }
+                    }
+                }
+            }
+
+            post("/") {
+                try {
+                    val genre = call.receive<GenreSerializable>()
+                    val genreDB = GenreDatabase(
+                        id = ObjectId(),
+                        name = genre.name,
+                        color = genre.color,
+                    )
+
+                    val result = repositoryGenre.add(genreDB)
+                    if (result == null) {
+                        call.respond(HttpStatusCode.InternalServerError)
+                    } else {
+                        val answer = GenreSerializable(
+                            id = genreDB.id.toString(),
+                            name = genreDB.name,
+                            color = genre.color,
+                        )
+
+                        call.respond(HttpStatusCode.Created, answer)
+
+                    }
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
+                }
+            }
         }
     }
 

@@ -8,10 +8,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.window.core.layout.WindowWidthSizeClass
+import dam.nathan.models.User
+import dam.nathan.models.UserwithToken
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainPage() {
+fun MainPage(user: UserwithToken) {
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
 
     Scaffold(
@@ -34,7 +36,7 @@ fun MainPage() {
             modifier = Modifier.fillMaxSize()
         ) {
             Text(
-                text = "Bienvenido a ListenThis usuario", // TODO change the word usuario per the username in use
+                text = "Bienvenido a ListenThis ${user.user!!.username}",
                 color = MaterialTheme.colorScheme.onBackground,
                 style = if (windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT) MaterialTheme.typography.displayMedium else MaterialTheme.typography.displaySmall,
                 textAlign = TextAlign.Center

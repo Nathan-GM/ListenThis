@@ -3,6 +3,7 @@ package dam.nathan
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toPainter
 import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
@@ -97,7 +99,7 @@ actual fun ib64(
         Image(
             painter = it.toPainter(),
             contentDescription = "Base 64 image",
-            modifier = Modifier.size(500.dp)
+            modifier = Modifier.size(200.dp)
         )
     }
 }
@@ -113,4 +115,16 @@ actual fun darkMode(changeTheme: () -> Unit, isDarkModeOn: Boolean) {
         val icon = if (!isDarkModeOn) Icons.Default.DarkMode else Icons.Default.LightMode
         androidx.compose.material3.Icon(icon, contentDescription = "")
     }
+}
+
+@OptIn(ExperimentalEncodingApi::class)
+@Composable
+actual fun imageLoader(avatar: String, size: Int) {
+    val avatar = Base64.decode(avatar.toByteArray())
+    val bitmap = ImageIO.read(ByteArrayInputStream(avatar)).toPainter()
+    Image(
+        bitmap,
+        contentDescription = "icon",
+        Modifier.clip(RoundedCornerShape(8.dp)).size(size.dp)
+    )
 }

@@ -1,13 +1,11 @@
 package dam.nathan.models.repositories
 
-import dam.nathan.models.User
+import dam.nathan.models.Genre
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -18,9 +16,8 @@ import kotlinx.serialization.json.Json
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
+class GenreRepository {
 
-class UserRepository {
-    /* Client that will connect to the KTOR server */
     val client = HttpClient() {
         install(ContentNegotiation) {
             gson {
@@ -46,51 +43,15 @@ class UserRepository {
     }
 
     val serverLocation = env["SERVER_IP"]
-    val urlUsers = "${serverLocation}${env["USERS_ROUTE"]}"
-    val urlLogin = "$serverLocation${env["LOGIN_ROUTE"]}"
+    val urlGenres = "${serverLocation}${env["GENRES_ROUTE"]}"
 
-    suspend fun register(u: User) : HttpStatusCode {
+    suspend fun getGenres(): MutableList<Genre>? {
         try {
-            val response: HttpResponse = client.post(urlUsers) {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    u
-                )
-            }
-            return response.status
-        } catch (e: ConnectException) {
-            return HttpStatusCode.RequestTimeout
-        }
-    }
-
-    suspend fun login(u: User) : String {
-        try {
-            val response: HttpResponse = client.post(urlLogin) {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    u
-                )
-            }
-            if (response.status == HttpStatusCode.OK) {
-                val decoded = Json.decodeFromString<HashMap<String, String>>(response.bodyAsText())
-                return decoded["token"].toString()
-            } else {
-                return ""
-            }
-        } catch (e: ConnectException) {
-            return "timedout"
-        } catch (e: SocketTimeoutException) {
-            return "timedout"
-        }
-    }
-
-    suspend fun getUser(u: User): User? {
-        try {
-            val response: HttpResponse = client.get("${urlUsers}user/${u.username}") {
+            val response: HttpResponse = client.get("$urlGenres") {
                 contentType(ContentType.Application.Json)
             }
             if (response.status == HttpStatusCode.OK) {
-                return Json.decodeFromString<User>(response.bodyAsText())
+                return Json.decodeFromString<MutableList<Genre>>(response.bodyAsText())
             } else {
                 return null
             }
@@ -100,4 +61,22 @@ class UserRepository {
             return null
         }
     }
+
+    suspend fun getGenreById(id:String): Genre? {
+        try {
+            val response: HttpResponse = client.get("${urlGenres}id") {
+                contentType(ContentType.Application.Json)
+            }
+            if (response.status == HttpStatusCode.OK) {
+                return Json.decodeFromString<Genre>(response.bodyAsText())
+            } else {
+                return null
+            }
+        } catch (e: ConnectException) {
+            return null
+        } catch (e: SocketTimeoutException) {
+            return null
+        }
+    }
+
 }

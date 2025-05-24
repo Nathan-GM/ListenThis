@@ -19,7 +19,8 @@ import org.bson.types.ObjectId
 @Serializable
 data class GenreSerializable(
     val id: String? = null,
-    val name: String
+    val name: String,
+    val color: List<Int>
 )
 
 /**
@@ -35,6 +36,7 @@ data class GenreSerializable(
  */
 data class GenreDatabase(
     @BsonId
-    val _id: ObjectId,
-    val name: String
+    val id: ObjectId,
+    val name: String,
+    val color: List<Int>
 )

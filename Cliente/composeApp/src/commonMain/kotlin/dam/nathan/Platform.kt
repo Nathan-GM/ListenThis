@@ -16,3 +16,6 @@ expect fun ib64(
 
 @Composable
 expect fun darkMode(changeTheme: () -> Unit, isDarkModeOn: Boolean)
+
+@Composable
+expect fun imageLoader(avatar: String, size: Int)

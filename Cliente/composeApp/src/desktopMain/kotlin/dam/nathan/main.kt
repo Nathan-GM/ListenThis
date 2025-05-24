@@ -8,6 +8,7 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "ListenThis",
+
     ) {
         KoinApplication(application = {
             modules(appModule)

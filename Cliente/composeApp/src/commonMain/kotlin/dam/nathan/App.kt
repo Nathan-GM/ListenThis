@@ -73,7 +73,8 @@ fun App() {
                 MainScreen(
                     goLogin = {
                         navController.navigate("login")
-                    }
+                    },
+                    userVM = vm
                 )
             }
 
