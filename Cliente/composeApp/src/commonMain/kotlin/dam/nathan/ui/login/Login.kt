@@ -105,6 +105,8 @@ fun LoginScreen(
             Row {
                 Button(
                     onClick = {
+                        timeout = false
+                        valid = false
                         if (login != null) {
                             scope.launch {
                                 waiting = true

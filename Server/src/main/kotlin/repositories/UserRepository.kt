@@ -20,10 +20,10 @@ import org.bson.types.ObjectId
  *
  * @author Nathan Gonzalez Mercado
  */
-class UserRepository(private val connection:Connection) : AUserRepository() {
+class UserRepository(private val connection: Connection) : AUserRepository() {
 
     //Env variable that will get data from the environment file.
-    val env = dotenv{
+    val env = dotenv {
         directory = "./"
         filename = "information.env"
     }
@@ -116,11 +116,13 @@ class UserRepository(private val connection:Connection) : AUserRepository() {
                 Updates.set("username", item.username),
                 Updates.set("password", item.password),
                 Updates.set("biography", item.biography),
-                Updates.set("avatar", item.avatar)
+                Updates.set("avatar", item.avatar),
+                Updates.set("followedGenres", item.followedGenres)
             )
             collectionDB.findOneAndUpdate(query, updates)
         }
     }
+
     /**
      * Function that will update a user information.
      *
@@ -142,7 +144,8 @@ class UserRepository(private val connection:Connection) : AUserRepository() {
                 Updates.set("username", item.username),
                 Updates.set("password", item.password),
                 Updates.set("biography", item.biography),
-                Updates.set("avatar", item.avatar)
+                Updates.set("avatar", item.avatar),
+                Updates.set("followedGenres", item.followedGenres)
             )
             collectionDB.findOneAndUpdate(query, updates)
         }
@@ -198,7 +201,7 @@ class UserRepository(private val connection:Connection) : AUserRepository() {
      * @see UserDatabase
      * @see Connection
      */
-    override suspend fun add(item: UserDatabase) : String? {
+    override suspend fun add(item: UserDatabase): String? {
         if (!connection.isOpen()) {
             connection.connect()
         }

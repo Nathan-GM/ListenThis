@@ -32,6 +32,11 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
         }
     }
 
+    suspend fun getUserById(id: String) : User? {
+        val databaseUser = repository.getUserById(id)
+        if (databaseUser != null) return databaseUser else return null
+    }
+
     suspend fun login(user: User) : String {
         var result = repository.login(user)
         if (result != "" && result != "timedout") {
@@ -42,6 +47,25 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
         }
         else {
             return "error"
+        }
+    }
+
+    suspend fun followGenre(genreId: String) : String {
+        var originalUser = _user.value.user
+        if (user.value.user!!.followedGenres!!.contains(genreId)) {
+            _user.value.user!!.followedGenres!!.remove(genreId)
+        } else {
+            _user.value.user!!.followedGenres!!.add(genreId)
+        }
+        var result = repository.followGenre(genreId = genreId, user = _user.value.user!!, token = _user.value.token!!)
+        if (result == "error") {
+            _user.value.user = originalUser
+            return "error"
+        } else if (result == "timedout") {
+            _user.value.user = originalUser
+            return "timeout"
+        } else {
+            return "ok"
         }
     }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
@@ -15,6 +16,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,7 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.window.core.layout.WindowWidthSizeClass
 import dam.nathan.imageLoader
 import dam.nathan.models.Genre
 import dam.nathan.models.Post
@@ -33,16 +40,14 @@ import dam.nathan.models.viewmodels.GenreViewModel
 import dam.nathan.models.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.math.log
 
 @Composable
 fun PostCard(
     userVM: UserViewModel,
     post: Post,
     genre: Genre?,
-    goToPostDetail: (Post, UserViewModel) -> Unit,
+    goToPostDetail: (Post) -> Unit,
 ) {
-    val genreVM: GenreViewModel = koinViewModel()
     var author by remember { mutableStateOf("") }
     var waiting by remember { mutableStateOf(false) }
     var firstTry by remember { mutableStateOf(true) }
@@ -51,14 +56,32 @@ fun PostCard(
 
     var scope = rememberCoroutineScope()
 
-//    if (firstTry) {
-//        waiting = true
-//        scope.launch {
-//            //TODO add get user by ID to get the name here
-//            waiting = false
-//            firstTry = false
-//        }
-//    }
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    var cardHeigh = 0
+    var cardWidth = 0
+    var pictureSize = 0
+
+    if (windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT) {
+        cardHeigh = 320
+        cardWidth = 300
+        pictureSize = 200
+    } else {
+        cardHeigh = 150
+        cardWidth = 100
+        pictureSize = 100
+    }
+
+    if (firstTry) {
+        waiting = true
+        scope.launch {
+            val tmpUser = userVM.getUserById(post.author)
+            if (tmpUser != null) {
+                author = tmpUser.username
+            }
+            waiting = false
+            firstTry = false
+        }
+    }
 
     if (genre != null) {
         containerColor = Color(genre.color[0],genre.color[1],genre.color[2],)
@@ -70,8 +93,8 @@ fun PostCard(
         )
     } else {
         Card(
-            modifier = Modifier.padding(16.dp).height(400.dp).width(300.dp)
-                .clickable { goToPostDetail(post, userVM) },
+            modifier = Modifier.padding(16.dp).wrapContentHeight().width(cardWidth.dp)
+                .clickable { goToPostDetail(post) },
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
             shape = RoundedCornerShape(8.dp),
             colors = CardColors(
@@ -86,12 +109,17 @@ fun PostCard(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(post.author)
-                if (post.media != null && post.media.isNotEmpty() && post.media != "") {
-                    imageLoader(post.media, 200)
-                }
+                Text(text = post.title, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Spacer(modifier = Modifier.height(5.dp))
+                Text("Publicado por $author", fontSize = 10.sp)
                 Spacer(modifier = Modifier.height(18.dp))
-                Text(post.content)
+                if (post.media != null && post.media.isNotEmpty() && post.media != "") {
+                    imageLoader(post.media, pictureSize)
+                } else {
+                    Spacer(modifier = Modifier.height(pictureSize.dp))
+                }
+//                Spacer(modifier = Modifier.height(18.dp))
+//                Text(post.content) this will appear on the detail view
             }
 
         }

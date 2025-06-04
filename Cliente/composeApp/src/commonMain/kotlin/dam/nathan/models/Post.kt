@@ -7,6 +7,8 @@ data class Post(
     val id: String? = null,
     val author: String,
     val media: String? = null,
+    val ytURL : String? = null,
+    val title: String,
     val content: String,
     val timestamp: Long,
     val genre : String,
@@ -14,6 +16,6 @@ data class Post(
     val likes: MutableList<Likes>? = mutableListOf(),
 ) {
     constructor(): this (
-        "","","","",0L,""
+        "","","","","","",0L,""
     )
 }

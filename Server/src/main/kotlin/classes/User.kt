@@ -12,6 +12,7 @@ import org.bson.types.ObjectId
  * @param password User's password. Here it will appear encrypted.
  * @param biography User's biography. It will appear displayed on their page.
  * @param avatar User's avatar. It will be stored in Base64. Can be null
+ * @param followedGenres Genre's that the user follows
  *
  * @author Nathan Gonzalez Mercado
  *
@@ -22,6 +23,7 @@ data class UserDatabase(
     val password : String,
     val biography : String? = "",
     val avatar : String? = "",
+    val followedGenres : MutableList<ObjectId>? = mutableListOf()
 )
 
 /**
@@ -32,6 +34,7 @@ data class UserDatabase(
  * @param password User's password. Here it will appear encrypted.
  * @param biography User's biography. It will appear displayed on their page.
  * @param avatar User's avatar. It will be stored in Base64. Can be null
+ * @param followedGenres Genres that the user follows
  *
  * @author Nathan Gonzalez Mercado
  *
@@ -42,5 +45,6 @@ data class UserSerializable(
     val username : String,
     val password : String,
     val biography : String? = "",
-    val avatar : String? = ""
+    val avatar : String? = "",
+    val followedGenres : MutableList<String>? = mutableListOf()
 )

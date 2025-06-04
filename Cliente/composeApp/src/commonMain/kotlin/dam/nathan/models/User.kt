@@ -23,6 +23,7 @@ data class User(
     val password: String,
     val avatar: String? = "",
     val biography: String? = "",
+    val followedGenres: MutableList<String>? = mutableListOf()
 ) {
     constructor(): this(
         "", "", "", "", ""
@@ -43,6 +44,6 @@ data class User(
  * @author Nathan Gonzalez Mercado
  */
 data class UserwithToken(
-    val user : User? = null,
+    var user : User? = null,
     val token: String? = ""
 )

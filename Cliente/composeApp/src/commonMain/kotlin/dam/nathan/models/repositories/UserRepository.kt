@@ -5,8 +5,10 @@ import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
@@ -29,7 +31,7 @@ class UserRepository {
             }
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 5000
+            requestTimeoutMillis = 8000
         }
     }
 
@@ -49,7 +51,29 @@ class UserRepository {
     val urlUsers = "${serverLocation}${env["USERS_ROUTE"]}"
     val urlLogin = "$serverLocation${env["LOGIN_ROUTE"]}"
 
-    suspend fun register(u: User) : HttpStatusCode {
+    suspend fun followGenre(genreId: String, user: User, token: String) : String {
+        try {
+            val response : HttpResponse = client.put("${urlUsers}/${user.id}") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    user
+                )
+                bearerAuth(token)
+            }
+            if (response.status == HttpStatusCode.NoContent) {
+                return "ok"
+            } else {
+                println(response.status)
+                return "error"
+            }
+        } catch (e: ConnectException) {
+            return "timedout"
+        } catch (e: SocketTimeoutException) {
+            return "timedout"
+        }
+    }
+
+    suspend fun register(u: User): HttpStatusCode {
         try {
             val response: HttpResponse = client.post(urlUsers) {
                 contentType(ContentType.Application.Json)
@@ -63,7 +87,7 @@ class UserRepository {
         }
     }
 
-    suspend fun login(u: User) : String {
+    suspend fun login(u: User): String {
         try {
             val response: HttpResponse = client.post(urlLogin) {
                 contentType(ContentType.Application.Json)
@@ -86,9 +110,50 @@ class UserRepository {
 
     suspend fun getUser(u: User): User? {
         try {
-            val response: HttpResponse = client.get("${urlUsers}user/${u.username}") {
+            //Used in case the username is separated by spaces
+            val userPart = u.username.split(" ")
+            var usernameQuery = ""
+            var first = true
+            var count = 0
+            if (userPart.size > 1) {
+                for (p in userPart) {
+                    if (first) {
+                        usernameQuery = p + "%20"
+                        count += 1
+                        first = false
+                    } else {
+                        if (count == (userPart.size-1)) {
+                            usernameQuery = usernameQuery + p
+                        } else {
+                            count += 1
+                            usernameQuery = usernameQuery + p + "%20"
+                        }
+                    }
+                }
+            } else {
+                usernameQuery = u.username
+            }
+            val response: HttpResponse = client.get("${urlUsers}user/${usernameQuery}") {
                 contentType(ContentType.Application.Json)
             }
+            if (response.status == HttpStatusCode.OK) {
+                return Json.decodeFromString<User>(response.bodyAsText())
+            } else {
+                return null
+            }
+        } catch (e: ConnectException) {
+            return null
+        } catch (e: SocketTimeoutException) {
+            return null
+        }
+    }
+
+    suspend fun getUserById(id: String): User? {
+        try {
+            val response: HttpResponse = client.get("${urlUsers}${id}") {
+                contentType(ContentType.Application.Json)
+            }
+            println(response.status)
             if (response.status == HttpStatusCode.OK) {
                 return Json.decodeFromString<User>(response.bodyAsText())
             } else {

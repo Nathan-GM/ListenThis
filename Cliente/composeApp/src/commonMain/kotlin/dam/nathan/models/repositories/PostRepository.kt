@@ -30,7 +30,7 @@ class PostRepository {
             }
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 5000
+            requestTimeoutMillis = 8000
         }
     }
 
@@ -54,7 +54,6 @@ class PostRepository {
             val response : HttpResponse = client.get(urlPosts) {
                 contentType(ContentType.Application.Json)
             }
-            println(response.status)
             if (response.status == HttpStatusCode.OK) {
                 return Json.decodeFromString<MutableList<Post>>(response.bodyAsText())
             } else {

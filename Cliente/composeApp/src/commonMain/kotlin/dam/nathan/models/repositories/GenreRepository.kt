@@ -26,7 +26,7 @@ class GenreRepository {
             }
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 5000
+            requestTimeoutMillis = 8000
         }
     }
 

@@ -56,6 +56,7 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
 
 
     var media by remember { mutableStateOf<String?>(null) }
+    var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf<String>("") }
     var genre by remember { mutableStateOf<Genre?>(Genre()) }
     var invalid by remember { mutableStateOf(false) }
@@ -113,12 +114,26 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                    },
+                    label = {
+                        Text("Titulo*")
+                    },
+                    placeholder = { Text("Titulo del post") }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 GenreComboBox(
                     genre,
                     genres,
                     cambio = {
                         genre = it
-                    }
+                    },
+                    inForm = true
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -163,13 +178,14 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
                 ) {
                     Button(
                         onClick = {
-                            if (content == null || content.isEmpty() || content == "") {
+                            if (title.isEmpty() || title == "" || content.isEmpty() || content == "") {
                                 invalid = true
                             } else {
                                 waiting = true
                                 val post = Post(
                                     author = user.user!!.id!!,
                                     media = media,
+                                    title = title,
                                     content = content,
                                     timestamp = System.currentTimeMillis(),
                                     genre = genre!!.id!!
@@ -209,17 +225,25 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GenreComboBox(gSelected: Genre?, genres: MutableList<Genre>, cambio: (Genre) -> Unit) {
+fun GenreComboBox(gSelected: Genre?, genres: MutableList<Genre>, cambio: (Genre) -> Unit, inForm: Boolean) {
 
-    var selectedGenre by remember { mutableStateOf<Genre?>(genres[0]) }
+    var selectedGenre by remember { mutableStateOf<Genre?>(null) }
 
     var expanded by remember { mutableStateOf(false) }
 
+    var selectGenreText = ""
+
     LaunchedEffect(gSelected) {
-        if (gSelected != null)
+        if (gSelected != null) {
             gSelected.let {
                 selectedGenre = it
             }
+        }
+        if (inForm) {
+            selectGenreText = "Selecciona un género*"
+        } else {
+            selectGenreText = "Selecciona un género"
+        }
     }
 
     Box(
@@ -233,9 +257,8 @@ fun GenreComboBox(gSelected: Genre?, genres: MutableList<Genre>, cambio: (Genre)
             }
         ) {
             TextField(
-                value = selectedGenre?.name ?: "Selecciona un género",
+                value = selectedGenre?.name ?: selectGenreText,
                 onValueChange = {
-
                 },
                 readOnly = true,
                 label = { Text("Género") },

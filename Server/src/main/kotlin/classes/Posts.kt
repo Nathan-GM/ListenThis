@@ -10,6 +10,7 @@ import org.bson.types.ObjectId
  * @param id Post's ID. It will be a String of the ObjectID that belongs to the post
  * @param author ID of the user who made the post.
  * @param media Image or Video related to the publication
+ * @param title Title of the publication
  * @param content Brief description of what's the post about
  * @param timestamp Moment where the post was created
  * @param genre Genre the post is related to.
@@ -24,6 +25,8 @@ data class PostsSerializables(
     val id: String? = null,
     val author: String,
     val media : String? = null,
+    val ytURL : String? = null,
+    val title: String,
     val content : String,
     val timestamp : Long? = System.currentTimeMillis(),
     val genre : String,
@@ -39,7 +42,9 @@ data class PostsSerializables(
  * @param media Image or Video in Base64 related to the post
  * @param timestamp Moment where the post was created
  * @param genre Genre the post is related to
- * @param content List of comments that the post have got since it got posted.
+ * @param title Title of the publication
+ * @param content Brief description of what's the post about
+ * @param comments List of comments that the post have got since it got posted.
  * @param likes List of likes that the post have got since it got posted.
  *
  * @author Nathan Gonzalez Mercado
@@ -50,6 +55,8 @@ data class PostsDatabase(
     val _id : ObjectId,
     val author : ObjectId,
     val media: String? = null,
+    val ytURL : String? = null,
+    val title: String,
     val content : String,
     val timestamp : Long,
     val genre : ObjectId,

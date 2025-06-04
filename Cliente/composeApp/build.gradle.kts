@@ -88,6 +88,9 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewModel)
 
+            //Youtube videos
+            implementation("io.github.khubaibkhan4:mediaplayer-kmp:1.0.9")
+
 
         }
         desktopMain.dependencies {

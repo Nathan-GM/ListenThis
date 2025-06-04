@@ -114,12 +114,21 @@ fun Application.configureRouting() {
                         if (user.avatar != null) {
                             avatar = loadAvatar(user.avatar)
                         }
+                        var genres = mutableListOf<String>()
+
+                        if (user.followedGenres != null) {
+                            for (fg in user.followedGenres) {
+                                genres.add(fg.toString())
+                            }
+                        }
+
                         val userResponse = UserSerializable(
                             id = user.id.toString(),
                             username = user.username,
                             password = user.password,
                             avatar = avatar,
                             biography = user.biography,
+                            followedGenres = genres
                         )
 
                         if (userResponse == null) {
@@ -132,6 +141,45 @@ fun Application.configureRouting() {
                         }
                     }
                 }
+            }
+
+            get("/{id}") {
+                val id = call.parameters["id"]
+                if (id == null) call.respond(HttpStatusCode.BadRequest)
+
+                val user = repositoryUser.getById(ObjectId(id))
+                if (user == null) {
+                    call.respond(HttpStatusCode.NotFound)
+                } else {
+                    var avatar = ""
+                    if (user.avatar != null) {
+                        avatar = loadAvatar(user.avatar)
+                    }
+                    var genres = mutableListOf<String>()
+
+                    if (user.followedGenres != null) {
+                        for (fg in user.followedGenres) {
+                            genres.add(fg.toString())
+                        }
+                    }
+                    val userResponse = UserSerializable(
+                        id = user.id.toString(),
+                        username = user.username,
+                        password = user.password,
+                        avatar = avatar,
+                        biography = user.biography,
+                        followedGenres = genres
+                    )
+                    if (userResponse == null) {
+                        call.respond(HttpStatusCode.NotFound)
+                    } else {
+                        call.respond(
+                            HttpStatusCode.OK,
+                            userResponse
+                        )
+                    }
+                }
+
             }
 
 
@@ -170,7 +218,8 @@ fun Application.configureRouting() {
                             username = user.username,
                             password = cypherPassword,
                             biography = user.biography,
-                            avatar = avatarBase64
+                            avatar = avatarBase64,
+                            followedGenres = mutableListOf()
                         )
 
                         val result = repositoryUser.add(userDataBase)
@@ -206,57 +255,84 @@ fun Application.configureRouting() {
              * Endpoint that will update the date related to a user.
              */
 
-            //TODO Add confirmation by token
-            put("/{id}") {
-                try {
-                    val idParameter = call.parameters["id"]!!
-                    val userParameter = call.receive<UserSerializable>()
-                    if (userParameter == null || idParameter.equals("")) {
-                        call.respond(HttpStatusCode.BadRequest)
+            authenticate("jwt-auth") {
+                put("/{id}") {
+                    try {
+                        val idParameter = call.parameters["id"]!!
+                        if (idParameter.equals("") || idParameter.isEmpty()) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        }
+                        val userParameter = call.receive<UserSerializable>()
+                        val principal = call.principal<JWTPrincipal>()
+
+                        val uname = principal!!.payload.getClaim("username").asString()
+                        val expirationDate = principal.expiresAt?.time?.minus(System.currentTimeMillis().toInt())
+                        val userId = repositoryUser.getByUsername(uname)!!.id.toString()
+
+                        if (expirationDate != null && expirationDate < 0) {
+                            call.respond(HttpStatusCode.Unauthorized)
+                        } else {
+                            if (!userId.equals(idParameter)) {
+                                call.respond(HttpStatusCode.Unauthorized)
+                            }
+                        }
+                        if (userParameter == null) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        }
+                        val id = ObjectId(idParameter)
+                        val user = repositoryUser.getById(id)
+                        var avatarBase64 = userParameter.avatar
+
+                        if (user == null) {
+                            call.respond(HttpStatusCode.NotFound)
+                        }
+
+                        println(userParameter)
+                        println(user)
+
+                        if (user?.avatar != userParameter.avatar && (userParameter.avatar != null && !user?.avatar.equals(
+                                ""
+                            ))
+                        ) {
+                            println("Entra en avatar")
+                            avatarBase64 = saveAvatar(userParameter.avatar, id)
+                        }
+
+                        var updatedGenres = mutableListOf<ObjectId>()
+
+                        if (userParameter.followedGenres != null) {
+                            for (fg in userParameter.followedGenres) {
+                                updatedGenres.add(ObjectId(fg))
+                            }
+                        }
+
+                        val userDB = UserDatabase(
+                            id = ObjectId(idParameter),
+                            username = userParameter.username,
+                            password = userParameter.password,
+                            biography = userParameter.biography,
+                            avatar = avatarBase64,
+                            followedGenres = updatedGenres
+                        )
+
+                        repositoryUser.updatebyId(userDB, id)
+                        call.respond(HttpStatusCode.NoContent)
+                    } catch (e: IllegalStateException) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = mapOf("message" to e.localizedMessage)
+                        )
+                    } catch (e: JsonConvertException) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = mapOf("message" to e.localizedMessage)
+                        )
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = mapOf("message" to e.localizedMessage)
+                        )
                     }
-                    val id = ObjectId(idParameter)
-                    val user = repositoryUser.getById(id)
-                    var avatarBase64 = userParameter.avatar
-
-                    if (user == null) {
-                        call.respond(HttpStatusCode.NotFound)
-                    }
-
-                    println(userParameter)
-                    println(user)
-
-                    if (user?.avatar != userParameter.avatar && (userParameter.avatar != null && !user?.avatar.equals(""))) {
-                        println("Entra en avatar")
-                        avatarBase64 = saveAvatar(userParameter.avatar, id)
-                    }
-                    println("espues de avatar")
-
-
-                    val userDB = UserDatabase(
-                        id = ObjectId(idParameter),
-                        username = userParameter.username,
-                        password = userParameter.password,
-                        biography = userParameter.biography,
-                        avatar = avatarBase64
-                    )
-
-                    repositoryUser.updatebyId(userDB, id)
-                    call.respond(HttpStatusCode.NoContent)
-                } catch (e: IllegalStateException) {
-                    call.respond(
-                        status = HttpStatusCode.BadRequest,
-                        message = mapOf("message" to e.localizedMessage)
-                    )
-                } catch (e: JsonConvertException) {
-                    call.respond(
-                        status = HttpStatusCode.BadRequest,
-                        message = mapOf("message" to e.localizedMessage)
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.BadRequest,
-                        message = mapOf("message" to e.localizedMessage)
-                    )
                 }
             }
 
@@ -264,34 +340,50 @@ fun Application.configureRouting() {
              * Endpoint that will delete a user based on the ID.
              */
 
-            //TODO add the confirmation by token
-            delete("/{id}") {
-                try {
-                    val idParameter = call.parameters["id"]!!
-                    if (idParameter == null || idParameter.equals("")) {
-                        call.respond(HttpStatusCode.BadRequest)
-                    }
-                    val id = ObjectId(idParameter)
-                    repositoryUser.removeById(id)
-                    call.respond(HttpStatusCode.NoContent)
-                } catch (e: IllegalStateException) {
-                    call.respond(
-                        status = HttpStatusCode.BadRequest,
-                        message = mapOf("message" to e.localizedMessage)
-                    )
-                } catch (e: JsonConvertException) {
-                    call.respond(
-                        status = HttpStatusCode.BadRequest,
-                        message = mapOf("message" to e.localizedMessage)
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        status = HttpStatusCode.BadRequest,
-                        message = mapOf("message" to e.localizedMessage)
-                    )
-                }
-            }
+            authenticate("jwt-auth") {
+                delete("/{id}") {
+                    try {
+                        val idParameter = call.parameters["id"]!!
+                        if (idParameter.equals("") || idParameter.isEmpty()) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        }
 
+                        val principal = call.principal<JWTPrincipal>()
+
+                        val uname = principal!!.payload.getClaim("username").asString()
+                        val expirationDate = principal.expiresAt?.time?.minus(System.currentTimeMillis().toInt())
+                        val userId = repositoryUser.getByUsername(uname)!!.id.toString()
+
+                        if (expirationDate != null && expirationDate < 0) {
+                            call.respond(HttpStatusCode.Unauthorized)
+                        } else {
+                            if (!userId.equals(idParameter)) {
+                                call.respond(HttpStatusCode.Unauthorized)
+                            }
+                        }
+
+                        val id = ObjectId(idParameter)
+                        repositoryUser.removeById(id)
+                        call.respond(HttpStatusCode.NoContent)
+                    } catch (e: IllegalStateException) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = mapOf("message" to e.localizedMessage)
+                        )
+                    } catch (e: JsonConvertException) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = mapOf("message" to e.localizedMessage)
+                        )
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = mapOf("message" to e.localizedMessage)
+                        )
+                    }
+                }
+
+            }
         }
 
         post("login") {
@@ -361,6 +453,8 @@ fun Application.configureRouting() {
                         id = post._id.toString(),
                         author = post.author.toString(),
                         media = media,
+                        ytURL = post.ytURL,
+                        title = post.title,
                         content = post.content,
                         timestamp = post.timestamp,
                         genre = post.genre.toString(),
@@ -392,13 +486,15 @@ fun Application.configureRouting() {
                             var mediaFile = ""
                             var id = ObjectId()
                             if (post.media != null && post.media.isNotBlank()) {
-                                mediaFile = saveImageForPost(post.media, id )
+                                mediaFile = saveImageForPost(post.media, id)
                             }
 
                             val postDB = PostsDatabase(
                                 _id = id,
                                 author = ObjectId(post.author),
                                 media = mediaFile,
+                                ytURL = post.ytURL,
+                                title = post.title,
                                 content = post.content,
                                 timestamp = post.timestamp ?: System.currentTimeMillis(),
                                 genre = ObjectId(post.genre),
@@ -434,6 +530,8 @@ fun Application.configureRouting() {
                                     id = postDB._id.toString(),
                                     author = postDB.author.toString(),
                                     media = postDB.media,
+                                    ytURL = postDB.ytURL,
+                                    title = postDB.title,
                                     content = post.content,
                                     timestamp = post.timestamp,
                                     genre = postDB.genre.toString(),
@@ -450,6 +548,66 @@ fun Application.configureRouting() {
                     } catch (e: Exception) {
                         call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
                     }
+                }
+            }
+
+            authenticate("jwt-auth") {
+                put("/{id}") {
+                    try {
+                        val idParameter = call.parameters["id"]!!
+                        if (idParameter == "" || idParameter.isEmpty()) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        }
+
+                        val postParameter = call.receive<PostsSerializables>()
+
+                        if (postParameter == null) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        }
+
+                        val principal = call.principal<JWTPrincipal>()
+
+                        val username = principal!!.payload.getClaim("username").asString()
+                        val expirationDate = principal.expiresAt?.time?.minus(System.currentTimeMillis().toInt())
+                        val userId = repositoryUser.getByUsername(username)!!.id.toString()
+
+                        if (expirationDate != null && expirationDate < 0) {
+                            call.respond(HttpStatusCode.Unauthorized)
+                        }
+                        if (userId != idParameter && userId != postParameter.author) {
+                            call.respond(HttpStatusCode.Unauthorized)
+                        }
+
+                        val id = ObjectId(idParameter)
+                        val post = repositoryPost.getById(id)
+
+                        if (post == null) {
+                            call.respond(HttpStatusCode.NotFound)
+                        }
+
+                        var updatedLikes = mutableListOf<LikesDatabase>()
+                        var updatedComments = mutableListOf<CommentsDatabase>()
+
+                        if (postParameter.likes != null && postParameter.likes.isNotEmpty()) {
+                            for (like in postParameter.likes) {
+                                val likesDatabase = LikesDatabase(
+                                    _userId = ObjectId(like.userId),
+                                )
+                                updatedLikes.add(likesDatabase)
+                            }
+                        }
+                        if (postParameter.comments != null && postParameter.comments.isNotEmpty()) {
+                            for (comment in postParameter.comments) {
+                                val commentsDatabase = CommentsDatabase(
+                                    ObjectId(comment.authorId),
+                                    comment.comment,
+                                    timeOfPost = comment.timeOfPost?: System.currentTimeMillis(),
+                                )
+                                updatedComments.add(commentsDatabase)
+                            }
+                        }
+
+                    } catch (e: Exception) {}
                 }
             }
 
