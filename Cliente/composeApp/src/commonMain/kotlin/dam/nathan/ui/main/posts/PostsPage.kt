@@ -94,53 +94,70 @@ fun PostsPage(
             )
         }, bottomBar = {
             BottomAppBar {
-                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    if (genres.size > 0) {
-                        GenreComboBox(
-                            selectedGenre,
-                            genres,
-                            cambio = {
-                                selectedGenre = it
-                                waiting = true
-                                firstTry = true
-                            },
-                            inForm = false)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        if (selectedGenre != null && !waiting) {
-                            if (userVM.user.value.user!!.followedGenres!!.contains(selectedGenre!!.id)) {
-                                buttonText = "Dejar de seguir"
-                            } else {
-                                buttonText = "Seguir"
-                            }
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (!waiting) {
+                        if (genres.size > 0) {
+                            GenreComboBox(
+                                selectedGenre,
+                                genres,
+                                cambio = {
+                                    selectedGenre = it
+                                    waiting = true
+                                    firstTry = true
+                                },
+                                inForm = false
+                            )
                             Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Button(
-                                    onClick = {
-                                        scope.launch {
-                                            waiting = true
-                                            var result = userVM.followGenre(selectedGenre!!.id!!)
-                                            println(result)
-                                            if (result == "ok") {
-                                                waiting = false
-                                            } else if (result == "timeout") {
-                                                errorText = "Error al conectarse con el servidor"
-                                                error = true
-                                                waiting = false
-                                            } else if (result == "error") {
-                                                errorText =
-                                                    "Error al seguir el género ${selectedGenre!!.name}"
-                                                error = true
-                                                waiting = false
+                            if (selectedGenre != null && !waiting) {
+                                if (userVM.user.value.user!!.followedGenres!!.contains(selectedGenre!!.id)) {
+                                    buttonText = "Dejar de seguir"
+                                } else {
+                                    buttonText = "Seguir"
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Button(
+                                        onClick = {
+                                            scope.launch {
+                                                waiting = true
+                                                var result =
+                                                    userVM.followGenre(selectedGenre!!.id!!)
+                                                println(result)
+                                                if (result == "ok") {
+                                                    waiting = false
+                                                } else if (result == "timeout") {
+                                                    errorText =
+                                                        "Error al conectarse con el servidor"
+                                                    error = true
+                                                    waiting = false
+                                                } else if (result == "error") {
+                                                    errorText =
+                                                        "Error al seguir el género ${selectedGenre!!.name}"
+                                                    error = true
+                                                    waiting = false
+                                                }
                                             }
                                         }
+                                    ) {
+
+                                        Text("$buttonText ${selectedGenre?.name}")
+
+                                    }
+                                    if (error) {
+                                        Text(errorText)
+                                    }
+                                }
+                                Button(
+                                    onClick = {
+                                        waiting = true
+                                        firstTry = true
+                                        selectedGenre = null
                                     }
                                 ) {
-
-                                    Text("$buttonText ${selectedGenre?.name}")
-
-                                }
-                                if (error) {
-                                    Text(errorText)
+                                    Text("Dejar de filtrar")
                                 }
                             }
                         }
@@ -188,7 +205,8 @@ fun PostsPage(
                         }
                         if (selectedGenre != null) {
                             postsSize = posts.count { x -> x.genre == selectedGenre?.id }
-                            postByGenre = posts.filter { x -> x.genre == selectedGenre?.id }.toMutableList()
+                            postByGenre =
+                                posts.filter { x -> x.genre == selectedGenre?.id }.toMutableList()
                         } else {
                             postsSize = tmp.size
                         }

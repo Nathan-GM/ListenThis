@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.filled.ArrowCircleUp
+import androidx.compose.material.icons.filled.YoutubeSearchedFor
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -56,10 +57,12 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
 
 
     var media by remember { mutableStateOf<String?>(null) }
+    var ytURL by remember { mutableStateOf<String?>(null) }
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf<String>("") }
     var genre by remember { mutableStateOf<Genre?>(Genre()) }
     var invalid by remember { mutableStateOf(false) }
+    var invalidURL by remember { mutableStateOf(false) }
 
     var waiting by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf(false) }
@@ -136,7 +139,7 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
                     inForm = true
                 )
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = content,
@@ -146,10 +149,26 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
                     label = {
                         Text("Contenido*")
                     },
-                    placeholder = { Text("Mensaje del post") }
+                    placeholder = { Text("Mensaje del post") },
+                    singleLine = false
                 )
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = ytURL ?: "",
+                    onValueChange = {
+                        ytURL = it
+                    },
+                    label = {
+                        Text("Video de youtube")
+                    },
+                    placeholder = {
+                        Text("https://youtu.be/s8ui82VvtJo?si=Ksgl0koz6ejL-vzC")
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 ib64(
                     onChange = {
@@ -161,6 +180,12 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
                 if (invalid) {
                     Text(
                         text = "Completa los campos obligatorios",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                if (invalidURL) {
+                    Text(
+                        text = "El enlace de YouTube recibido no es valido",
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -182,23 +207,32 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
                                 invalid = true
                             } else {
                                 waiting = true
-                                val post = Post(
-                                    author = user.user!!.id!!,
-                                    media = media,
-                                    title = title,
-                                    content = content,
-                                    timestamp = System.currentTimeMillis(),
-                                    genre = genre!!.id!!
-                                )
-                                scope.launch {
-                                    val tmp = vm.addPost(post, user.token!!)
-                                    if (tmp == "volver") {
+                                if (ytURL != null) {
+                                    if (!ytURL!!.contains("youtube.com")) {
+                                        invalidURL = true
                                         waiting = false
-                                        error = false
-                                        volver()
-                                    } else if (tmp == "error") {
-                                        waiting = false
-                                        error = true
+                                    }
+                                }
+                                if (!invalidURL) {
+                                    val post = Post(
+                                        author = user.user!!.id!!,
+                                        media = media,
+                                        title = title,
+                                        content = content,
+                                        timestamp = System.currentTimeMillis(),
+                                        genre = genre!!.id!!,
+                                        ytURL = ytURL
+                                    )
+                                    scope.launch {
+                                        val tmp = vm.addPost(post, user.token!!)
+                                        if (tmp == "volver") {
+                                            waiting = false
+                                            error = false
+                                            volver()
+                                        } else if (tmp == "error") {
+                                            waiting = false
+                                            error = true
+                                        }
                                     }
                                 }
                             }

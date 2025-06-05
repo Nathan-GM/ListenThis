@@ -42,6 +42,7 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import dam.nathan.imageLoader
 import dam.nathan.models.Genre
 import dam.nathan.models.Post
+import dam.nathan.models.User
 import dam.nathan.models.viewmodels.GenreViewModel
 import dam.nathan.models.viewmodels.PostViewModel
 import dam.nathan.models.viewmodels.UserViewModel
@@ -55,8 +56,10 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 @Composable
 fun Profile(
     userVM: UserViewModel,
+    goToDetails: (Post, Genre?) -> Unit,
+    userId: String? = null
 ) {
-    val user = userVM.user.value
+    var user by remember { mutableStateOf<User?>(userVM.user.value.user) }
     var postsByUser by remember { mutableStateOf(mutableListOf<Post>()) }
 
     val postVM: PostViewModel = koinViewModel()
@@ -99,17 +102,35 @@ fun Profile(
     if (firsTry) {
         waiting = true
         scope.launch {
-            var tmp = postVM.getUserPosts(user.user!!)
-            var tmpG = genreVM.getAllGenres()
-            if (tmp.isNotEmpty()) {
-                postsByUser = tmp
-                if (tmpG != null) {
-                    genres = tmpG
-                }
-                var tmpPG = postsByUser.groupingBy { it.genre }.eachCount().toSortedMap()
+            if (userId == null) {
+                var tmp = postVM.getUserPosts(user!!)
+                var tmpG = genreVM.getAllGenres()
+                if (tmp.isNotEmpty()) {
+                    postsByUser = tmp
+                    if (tmpG != null) {
+                        genres = tmpG
+                    }
+                    var tmpPG = postsByUser.groupingBy { it.genre }.eachCount().toSortedMap()
 
-                println(tmpPG)
-                genre = genres.find { it.id == tmpPG.maxBy { it.value }.key }?.name ?: ""
+                    println(tmpPG)
+                    genre = genres.find { it.id == tmpPG.maxBy { it.value }.key }?.name ?: ""
+                }
+            } else {
+                user = userVM.getUserById(userId)
+                if (user != null) {
+                    var PBU = postVM.getUserPosts(user!!)
+                    var tmpG = genreVM.getAllGenres()
+                    if (PBU.isNotEmpty()) {
+                        postsByUser = PBU
+                        if (tmpG != null) {
+                            genres = tmpG
+                        }
+                        var tmpPG = postsByUser.groupingBy { it.genre }.eachCount().toSortedMap()
+
+                        println(tmpPG)
+                        genre = genres.find { it.id == tmpPG.maxBy { it.value }.key }?.name ?: ""
+                    }
+                }
             }
             delay(2000)
             waiting = false
@@ -120,7 +141,7 @@ fun Profile(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Perfil de ${user.user?.username}") },
+                title = { Text("Perfil de ${user!!.username}")  },
                 colors = TopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -179,9 +200,9 @@ fun Profile(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        if (user.user?.avatar != null) {
-                            if (user.user!!.avatar!!.isNotEmpty()) {
-                                imageLoader(user.user!!.avatar!!, photoSize)
+                        if (user!!.avatar != null) {
+                            if (user!!.avatar!!.isNotEmpty()) {
+                                imageLoader(user!!.avatar!!, photoSize)
                             }
                         }
 
@@ -191,7 +212,7 @@ fun Profile(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(text = "${user.user?.username}")
+                            Text(text = "${user!!.username}")
                             Spacer(Modifier.width(spacer.dp))
                             Text(postText)
                             Spacer(Modifier.width(spacer.dp))
@@ -205,7 +226,7 @@ fun Profile(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Text(user.user!!.biography ?: "", textAlign = TextAlign.Center)
+                        Text(user!!.biography ?: "", textAlign = TextAlign.Center)
                     }
                 }
 
@@ -222,12 +243,12 @@ fun Profile(
                                 userVM = userVM,
                                 post = postsByUser[it],
                                 genre = postG,
-                                goToPostDetail = { detail -> println(detail) } // Change this to go to details
+                                goToPostDetail = { detail -> goToDetails(postsByUser[it], postG) }
                             )
                         }
                     }
                 } else {
-                    Text("Ahora mismo el usuario ${user.user!!.username} no cuenta con publicaciones.")
+                    Text("Ahora mismo el usuario ${user!!.username} no cuenta con publicaciones.")
                 }
 
 

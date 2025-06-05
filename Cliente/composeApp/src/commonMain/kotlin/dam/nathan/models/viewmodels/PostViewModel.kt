@@ -6,7 +6,6 @@ import dam.nathan.models.User
 import dam.nathan.models.repositories.PostRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlin.math.log
 
 class PostViewModel(val repository : PostRepository) : ViewModel() {
     private var _posts = MutableStateFlow<MutableList<Post>>(mutableListOf())
@@ -43,5 +42,22 @@ class PostViewModel(val repository : PostRepository) : ViewModel() {
         } else {
             return userPosts
         }
+    }
+
+    suspend fun updatePost(post: Post, token: String) : String {
+        val result = repository.updatePost(post, token)
+        if (result != null && result == "ok") {
+            updatePostsList(post)
+            return "ok"
+        } else {
+            return "error"
+        }
+    }
+
+
+    private fun updatePostsList(update: Post) {
+        _posts.value = _posts.value.map { post ->
+            if (post.id == update.id) update else post
+        }.toMutableList()
     }
 }

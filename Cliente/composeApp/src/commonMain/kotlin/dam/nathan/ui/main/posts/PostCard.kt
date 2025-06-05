@@ -3,6 +3,7 @@ package dam.nathan.ui.main.posts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -10,10 +11,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.ModeComment
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -35,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dam.nathan.imageLoader
 import dam.nathan.models.Genre
+import dam.nathan.models.Likes
 import dam.nathan.models.Post
 import dam.nathan.models.viewmodels.GenreViewModel
 import dam.nathan.models.viewmodels.UserViewModel
@@ -118,8 +125,26 @@ fun PostCard(
                 } else {
                     Spacer(modifier = Modifier.height(pictureSize.dp))
                 }
-//                Spacer(modifier = Modifier.height(18.dp))
-//                Text(post.content) this will appear on the detail view
+                Row {
+                    Icon(
+                        Icons.Filled.MusicNote,
+                        "",
+                        tint = if (post.likes!!.contains(Likes(userVM.user.value.user!!.id!!))) Color.Red else Color.White,
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text("${post.likes.size}")
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Icon(
+                        Icons.Filled.ModeComment,
+                        "",
+                        tint = Color.White,
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text("${post.comments!!.size}")
+
+                }
             }
 
         }

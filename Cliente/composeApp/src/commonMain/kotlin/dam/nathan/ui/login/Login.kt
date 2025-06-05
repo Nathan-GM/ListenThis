@@ -43,12 +43,12 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            /* TODO make this text visible to Android */
             Text(
                 text = "Bienvenido a ListenThis",
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.displayLarge,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                textAlign = TextAlign.Center
             )
             Text(
                 text = "Iniciar sesión",

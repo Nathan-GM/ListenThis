@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.window.core.layout.WindowWidthSizeClass
 import dam.nathan.models.Genre
 import dam.nathan.models.Post
@@ -33,7 +34,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainPage(user: UserwithToken, userVM: UserViewModel) {
+fun MainPage(user: UserwithToken, userVM: UserViewModel, goToDetails: (Post, Genre?) -> Unit) {
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val postVM: PostViewModel = koinViewModel()
     val genreVM: GenreViewModel = koinViewModel()
@@ -97,11 +98,11 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel) {
                 firstTime = false
             }
         }
-        // TODO Revisar esto
+
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().padding(top = 10.dp)
         ) {
             if (waiting) {
                 CircularProgressIndicator(
@@ -116,13 +117,13 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             if (recommended.isNotEmpty() || latestPost != null) {
                 Text(
                     text = "Recomendaciones",
                     color = MaterialTheme.colorScheme.onBackground,
-                    style = if (windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT) MaterialTheme.typography.displayMedium else MaterialTheme.typography.displaySmall,
+                    style = if (windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT) MaterialTheme.typography.displaySmall else MaterialTheme.typography.labelLarge,
                     textAlign = TextAlign.Center,
                 )
 
@@ -146,7 +147,7 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel) {
                                         userVM = userVM,
                                         post = latestPost!!,
                                         genre = genre,
-                                        goToPostDetail = { println(latestPost) }
+                                        goToPostDetail = { goToDetails(latestPost!!, genre) }
                                     )
                                 }
 
@@ -162,7 +163,7 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel) {
                                         userVM = userVM,
                                         post = secondGenreLatestPost!!,
                                         genre = secondGenre,
-                                        goToPostDetail = { println(secondGenreLatestPost) }
+                                        goToPostDetail = { goToDetails(secondGenreLatestPost!!, secondGenre) }
                                     )
                                 }
                             }
@@ -180,7 +181,7 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel) {
                                             userVM = userVM,
                                             post = recommended[it],
                                             genre = genre!!,
-                                            goToPostDetail = { detail -> println(detail) } // TODO Change this to go to detial
+                                            goToPostDetail = { detail ->  goToDetails(latestPost!!, genre)  }
                                         )
                                     } else if (secondGenre != null) {
                                         if (recommended[it].genre == secondGenre!!.id) {
@@ -188,7 +189,7 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel) {
                                                 userVM = userVM,
                                                 post = recommended[it],
                                                 genre = secondGenre!!,
-                                                goToPostDetail = { detail -> println(detail) } // TODO Change this to go to detial
+                                                goToPostDetail = { detail -> goToDetails(secondGenreLatestPost!!, secondGenre) }
                                             )
                                         }
                                     }

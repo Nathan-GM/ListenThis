@@ -607,7 +607,28 @@ fun Application.configureRouting() {
                             }
                         }
 
-                    } catch (e: Exception) {}
+                        val postDB = PostsDatabase(
+                            _id = id,
+                            author = ObjectId(postParameter.author),
+                            media = postParameter.media,
+                            ytURL = postParameter.ytURL,
+                            title = postParameter.title,
+                            content = postParameter.content,
+                            timestamp = postParameter.timestamp ?: System.currentTimeMillis(),
+                            genre = ObjectId(postParameter.genre),
+                            comments = updatedComments,
+                            likes = updatedLikes
+                        )
+                        repositoryPost.updatebyId(postDB, id)
+                        call.respond(HttpStatusCode.NoContent)
+
+                    } catch (e: IllegalStateException) {
+                        call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
+                    } catch (e: JsonConvertException) {
+                        call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
+                    } catch (e: Exception) {
+                        call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))
+                    }
                 }
             }
 

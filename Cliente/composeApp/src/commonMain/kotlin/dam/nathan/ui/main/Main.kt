@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.window.core.layout.WindowWidthSizeClass
 import dam.nathan.models.Genre
 import dam.nathan.models.Post
+import dam.nathan.models.User
 import dam.nathan.models.viewmodels.UserViewModel
 import dam.nathan.ui.main.genres.GenresPage
 import dam.nathan.ui.main.main.MainPage
@@ -76,9 +77,12 @@ fun MainScreen(
 ) {
 
     var destinationSelected = remember { mutableStateOf(Destinations.MAIN) }
+    var previousDestination = remember { mutableStateOf<Destinations?>(null) }
+    var userSelected by remember { mutableStateOf<String?>(null) }
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     var genrePicked by remember { mutableStateOf<Genre?>(null) }
     var detailsPost by remember { mutableStateOf<Post?>(null) }
+    var isOnPostDetails by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -113,6 +117,7 @@ fun MainScreen(
                         }
                     }
                 }
+
             },
         ) {
             Box(
@@ -125,8 +130,15 @@ fun MainScreen(
                 ) {
                     when (destinationSelected.value) {
                         Destinations.MAIN -> {
-                            MainPage(userVM.user.value, userVM)
+                            MainPage(userVM.user.value, userVM, goToDetails = { post, genre ->
+                                detailsPost = post
+                                genrePicked = genre
+                                destinationSelected.value = Destinations.DETAILS
+                                previousDestination.value = Destinations.MAIN
+                                isOnPostDetails = true
+                            })
                             genrePicked = null
+                            userSelected = null
                         }
 
                         Destinations.POSTS -> {
@@ -139,8 +151,11 @@ fun MainScreen(
                                     detailsPost = post
                                     genrePicked = genre
                                     destinationSelected.value = Destinations.DETAILS
+                                    previousDestination.value = Destinations.POSTS
+                                    isOnPostDetails = true
                                 }
                             )
+                            userSelected = null
                         }
 
                         Destinations.GENRES -> {
@@ -149,20 +164,29 @@ fun MainScreen(
                                 genrePicked = genre
                             })
                             genrePicked = null
+                            userSelected = null
                         }
 
                         Destinations.PROFILE -> {
-                            Profile(userVM = userVM)
+                            Profile(userVM = userVM, goToDetails = { post, genre ->
+                                detailsPost = post
+                                genrePicked = genre
+                                destinationSelected.value = Destinations.DETAILS
+                                previousDestination.value = Destinations.POSTS
+                                isOnPostDetails = true
+                            }, userId = userSelected)
                             genrePicked = null
                         }
 
                         Destinations.CONFIG -> {
                             println("CONFIG")
                             genrePicked = null
+                            userSelected = null
                         }
 
                         Destinations.LOGOUT -> {
                             genrePicked = null
+                            userSelected = null
                             goLogin()
                         }
 
@@ -173,13 +197,21 @@ fun MainScreen(
                                     destinationSelected.value = Destinations.POSTS
                                 }
                             )
+                            userSelected = null
                         }
 
                         Destinations.DETAILS -> {
                             PostDetail(post = detailsPost!!, genre = genrePicked,
                                 userVM = userVM, volver = {
                                     genrePicked = null
-                                    destinationSelected.value = Destinations.POSTS
+                                    userSelected = null
+                                    destinationSelected.value =
+                                        previousDestination.value ?: Destinations.MAIN
+                                    isOnPostDetails = false
+                                }, goToAuthorProfile = { author ->
+                                    userSelected = author
+                                    destinationSelected.value = Destinations.PROFILE
+                                    isOnPostDetails = false
                                 })
                         }
                     }
