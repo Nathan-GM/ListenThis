@@ -50,6 +50,11 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
         }
     }
 
+    fun logut() {
+        _user.value.user = null
+        _token.value = ""
+    }
+
     suspend fun followGenre(genreId: String) : String {
         var originalUser = _user.value.user
         if (user.value.user!!.followedGenres!!.contains(genreId)) {
@@ -67,6 +72,19 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
         } else {
             return "ok"
         }
+    }
+
+    suspend fun deleteAccount() : String {
+        var originalUser = _user.value.user
+        val result = repository.removeAccount(_user.value.user!!.id!!, _user.value.token!!)
+        if (result == "error") {
+            return "error"
+        }
+        else {
+            logut()
+            return "ok"
+        }
+
     }
 
 }

@@ -74,7 +74,11 @@ fun App() {
                     goLogin = {
                         navController.navigate("login")
                     },
-                    userVM = vm
+                    userVM = vm,
+                    isDarkMode = dark.value,
+                    changeTheme = {
+                        dark.value = !dark.value
+                    }
                 )
             }
 

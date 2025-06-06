@@ -1,7 +1,6 @@
 package dam.nathan.models.repositories
 
 import dam.nathan.models.Post
-import dam.nathan.models.UserwithToken
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout

@@ -57,6 +57,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 fun Profile(
     userVM: UserViewModel,
     goToDetails: (Post, Genre?) -> Unit,
+    goToSettings: () -> Unit,
     userId: String? = null
 ) {
     var user by remember { mutableStateOf<User?>(userVM.user.value.user) }
@@ -152,7 +153,7 @@ fun Profile(
                     if (configButton) {
                         IconButton(
                             enabled = configButton,
-                            onClick = { println("settings") } // TODO go to settings screen
+                            onClick = { goToSettings() }
                         ) {
                             Icon(
                                 Icons.Filled.Settings,

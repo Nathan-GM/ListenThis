@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.filled.ArrowCircleUp
-import androidx.compose.material.icons.filled.YoutubeSearchedFor
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -259,7 +257,7 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GenreComboBox(gSelected: Genre?, genres: MutableList<Genre>, cambio: (Genre) -> Unit, inForm: Boolean) {
+fun GenreComboBox(gSelected: Genre?, genres: MutableList<Genre>, cambio: (Genre) -> Unit, inForm: Boolean, modifier: Modifier? = Modifier) {
 
     var selectedGenre by remember { mutableStateOf<Genre?>(null) }
 
@@ -281,7 +279,7 @@ fun GenreComboBox(gSelected: Genre?, genres: MutableList<Genre>, cambio: (Genre)
     }
 
     Box(
-        modifier = Modifier.wrapContentWidth().wrapContentHeight(),
+        modifier = modifier?.wrapContentHeight() ?: Modifier.wrapContentWidth().wrapContentHeight(),
         contentAlignment = Alignment.Center
     ) {
         ExposedDropdownMenuBox(

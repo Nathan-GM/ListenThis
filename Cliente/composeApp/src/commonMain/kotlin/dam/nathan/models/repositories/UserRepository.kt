@@ -6,6 +6,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.put
@@ -163,6 +164,24 @@ class UserRepository {
             return null
         } catch (e: SocketTimeoutException) {
             return null
+        }
+    }
+
+    suspend fun removeAccount(id:String, token:String) : String {
+        try {
+            val response: HttpResponse = client.delete("${urlUsers}$id") {
+                contentType(ContentType.Application.Json)
+                bearerAuth(token)
+            }
+            if (response.status == HttpStatusCode.NoContent) {
+                return "ok"
+            } else {
+                return "error"
+            }
+        } catch (e: ConnectException) {
+            return "error"
+        } catch (e: SocketTimeoutException) {
+            return "error"
         }
     }
 }

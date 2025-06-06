@@ -8,11 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.More
 import androidx.compose.material.icons.filled.PlusOne
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
@@ -35,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dam.nathan.models.Genre
 import dam.nathan.models.Post
@@ -108,18 +108,19 @@ fun PostsPage(
                                     waiting = true
                                     firstTry = true
                                 },
-                                inForm = false
+                                inForm = false,
+                                modifier = Modifier.width(200.dp)
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
                             if (selectedGenre != null && !waiting) {
                                 if (userVM.user.value.user!!.followedGenres!!.contains(selectedGenre!!.id)) {
-                                    buttonText = "Dejar de seguir"
+                                    buttonText = "Dejar de \nseguir"
                                 } else {
-                                    buttonText = "Seguir"
+                                    buttonText = "Seguir \n"
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Button(
+                                        modifier = Modifier.wrapContentSize(),
                                         onClick = {
                                             scope.launch {
                                                 waiting = true
@@ -143,7 +144,7 @@ fun PostsPage(
                                         }
                                     ) {
 
-                                        Text("$buttonText ${selectedGenre?.name}")
+                                        Text("$buttonText ${selectedGenre?.name}", fontSize = 12.sp)
 
                                     }
                                     if (error) {
@@ -151,13 +152,14 @@ fun PostsPage(
                                     }
                                 }
                                 Button(
+                                    modifier = Modifier.wrapContentSize(),
                                     onClick = {
                                         waiting = true
                                         firstTry = true
                                         selectedGenre = null
                                     }
                                 ) {
-                                    Text("Dejar de filtrar")
+                                    Text("Dejar de filtrar",fontSize = 12.sp)
                                 }
                             }
                         }

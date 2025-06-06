@@ -1,47 +1,37 @@
 package dam.nathan.ui.main
 
-/*import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.window.core.layout.WindowWidthSizeClass
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector*/
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Details
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.More
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.window.core.layout.WindowWidthSizeClass
 import dam.nathan.models.Genre
 import dam.nathan.models.Post
-import dam.nathan.models.User
 import dam.nathan.models.viewmodels.UserViewModel
+import dam.nathan.ui.main.configuration.SettingsPage
 import dam.nathan.ui.main.genres.GenresPage
 import dam.nathan.ui.main.main.MainPage
 import dam.nathan.ui.main.posts.PostDetail
@@ -74,6 +64,8 @@ enum class Destinations(
 fun MainScreen(
     goLogin: () -> Unit,
     userVM: UserViewModel,
+    isDarkMode : Boolean,
+    changeTheme: () -> Unit
 ) {
 
     var destinationSelected = remember { mutableStateOf(Destinations.MAIN) }
@@ -174,12 +166,15 @@ fun MainScreen(
                                 destinationSelected.value = Destinations.DETAILS
                                 previousDestination.value = Destinations.POSTS
                                 isOnPostDetails = true
-                            }, userId = userSelected)
+                            }, userId = userSelected,
+                                goToSettings = {
+                                    destinationSelected.value = Destinations.CONFIG
+                                })
                             genrePicked = null
                         }
 
                         Destinations.CONFIG -> {
-                            println("CONFIG")
+                            SettingsPage(userVM = userVM, isDarkModeOn = isDarkMode, changeTheme = changeTheme)
                             genrePicked = null
                             userSelected = null
                         }
@@ -187,6 +182,7 @@ fun MainScreen(
                         Destinations.LOGOUT -> {
                             genrePicked = null
                             userSelected = null
+                            userVM.logut()
                             goLogin()
                         }
 
