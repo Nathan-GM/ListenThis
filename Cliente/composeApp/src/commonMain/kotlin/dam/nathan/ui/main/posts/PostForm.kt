@@ -207,8 +207,10 @@ fun PostForm(user: UserwithToken, volver: () -> Unit) {
                                 waiting = true
                                 if (ytURL != null) {
                                     if (!ytURL!!.contains("youtube.com")) {
-                                        invalidURL = true
-                                        waiting = false
+                                        if (!ytURL!!.contains("youtu.be")) {
+                                            invalidURL = true
+                                            waiting = false
+                                        }
                                     }
                                 }
                                 if (!invalidURL) {

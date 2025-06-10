@@ -174,7 +174,7 @@ fun MainScreen(
                         }
 
                         Destinations.CONFIG -> {
-                            SettingsPage(userVM = userVM, isDarkModeOn = isDarkMode, changeTheme = changeTheme)
+                            SettingsPage(userVM = userVM, isDarkModeOn = isDarkMode, changeTheme = changeTheme, goToLogin = goLogin)
                             genrePicked = null
                             userSelected = null
                         }

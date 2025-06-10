@@ -8,10 +8,7 @@ import dam.nathan.repositories.GenreRepository
 import dam.nathan.repositories.PostRepository
 import dam.nathan.repositories.UserRepository
 import dam.nathan.responses.UserResponse
-import dam.nathan.services.loadAvatar
-import dam.nathan.services.loadImageForPost
-import dam.nathan.services.saveAvatar
-import dam.nathan.services.saveImageForPost
+import dam.nathan.services.*
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
 import io.ktor.serialization.*
@@ -25,8 +22,6 @@ import io.ktor.server.routing.*
 import org.bson.types.ObjectId
 import java.util.*
 import kotlin.random.Random
-
-//TODO Check avatar service, its not working properly
 
 fun Application.configureRouting() {
 
@@ -255,74 +250,83 @@ fun Application.configureRouting() {
              * Endpoint that will update the date related to a user.
              */
 
+            //TODO CHECK FOR DUPLICATES USERNAMES
             authenticate("jwt-auth") {
                 put("/{id}") {
                     try {
-                        val idParameter = call.parameters["id"]!!
+                        println("inicia")
+                        val idParameter = call.parameters["id"] ?: ""
                         if (idParameter.equals("") || idParameter.isEmpty()) {
+                            println("Error parametro ID")
                             call.respond(HttpStatusCode.BadRequest)
-                        }
-                        val userParameter = call.receive<UserSerializable>()
-                        val principal = call.principal<JWTPrincipal>()
-
-                        val uname = principal!!.payload.getClaim("username").asString()
-                        val expirationDate = principal.expiresAt?.time?.minus(System.currentTimeMillis().toInt())
-                        val userId = repositoryUser.getByUsername(uname)!!.id.toString()
-
-                        if (expirationDate != null && expirationDate < 0) {
-                            call.respond(HttpStatusCode.Unauthorized)
                         } else {
-                            if (!userId.equals(idParameter)) {
+                            println("tras id")
+                            val userParameter = call.receive<UserSerializable>()
+                            val principal = call.principal<JWTPrincipal>()
+
+                            val uname = principal!!.payload.getClaim("username").asString()
+                            println("se nombre tras token : $uname")
+                            val expirationDate = principal.expiresAt?.time?.minus(System.currentTimeMillis().toInt())
+
+                            println("antes de if fecha")
+
+                            if (expirationDate != null && expirationDate < 0) {
                                 call.respond(HttpStatusCode.Unauthorized)
+                                print("Fecha; $expirationDate")
+                            } else {
+                                println("tras comprobacion fechas")
+                                if (userParameter == null) {
+                                    println("user badRequest")
+                                    call.respond(HttpStatusCode.BadRequest)
+                                } else {
+                                    println("POST autentication")
+
+                                    val id = ObjectId(idParameter)
+                                    val user = repositoryUser.getById(id)
+                                    var avatarBase64 = userParameter.avatar
+
+                                    if (user == null) {
+                                        call.respond(HttpStatusCode.NotFound)
+                                    } else {
+
+                                        if (user?.avatar != userParameter.avatar && (userParameter.avatar != null && !user?.avatar.equals(
+                                                ""
+                                            ))
+                                        ) {
+                                            println("Entra en avatar")
+                                            avatarBase64 = saveAvatar(userParameter.avatar, id)
+                                        }
+
+                                        var updatedGenres = mutableListOf<ObjectId>()
+
+                                        if (userParameter.followedGenres != null) {
+                                            for (fg in userParameter.followedGenres) {
+                                                updatedGenres.add(ObjectId(fg))
+                                            }
+                                        }
+
+                                        val userDB = UserDatabase(
+                                            id = ObjectId(idParameter),
+                                            username = userParameter.username,
+                                            password = userParameter.password,
+                                            biography = userParameter.biography,
+                                            avatar = avatarBase64,
+                                            followedGenres = updatedGenres
+                                        )
+
+                                        repositoryUser.updatebyId(userDB, id)
+                                        call.respond(HttpStatusCode.OK)
+                                    }
+                                }
                             }
                         }
-                        if (userParameter == null) {
-                            call.respond(HttpStatusCode.BadRequest)
-                        }
-                        val id = ObjectId(idParameter)
-                        val user = repositoryUser.getById(id)
-                        var avatarBase64 = userParameter.avatar
-
-                        if (user == null) {
-                            call.respond(HttpStatusCode.NotFound)
-                        }
-
-                        println(userParameter)
-                        println(user)
-
-                        if (user?.avatar != userParameter.avatar && (userParameter.avatar != null && !user?.avatar.equals(
-                                ""
-                            ))
-                        ) {
-                            println("Entra en avatar")
-                            avatarBase64 = saveAvatar(userParameter.avatar, id)
-                        }
-
-                        var updatedGenres = mutableListOf<ObjectId>()
-
-                        if (userParameter.followedGenres != null) {
-                            for (fg in userParameter.followedGenres) {
-                                updatedGenres.add(ObjectId(fg))
-                            }
-                        }
-
-                        val userDB = UserDatabase(
-                            id = ObjectId(idParameter),
-                            username = userParameter.username,
-                            password = userParameter.password,
-                            biography = userParameter.biography,
-                            avatar = avatarBase64,
-                            followedGenres = updatedGenres
-                        )
-
-                        repositoryUser.updatebyId(userDB, id)
-                        call.respond(HttpStatusCode.NoContent)
                     } catch (e: IllegalStateException) {
                         call.respond(
                             status = HttpStatusCode.BadRequest,
                             message = mapOf("message" to e.localizedMessage)
                         )
                     } catch (e: JsonConvertException) {
+                        println(e.stackTrace)
                         call.respond(
                             status = HttpStatusCode.BadRequest,
                             message = mapOf("message" to e.localizedMessage)
@@ -363,7 +367,23 @@ fun Application.configureRouting() {
                         }
 
                         val id = ObjectId(idParameter)
+                        val user = repositoryUser.getById(id)
+                        if (user?.avatar != null) {
+                            removeAvatar(user.avatar)
+                        }
                         repositoryUser.removeById(id)
+
+                        val userPosts = repositoryPost.findPostByUserId(id)
+
+                        if (userPosts.isNotEmpty()) {
+                            userPosts.forEach { post ->
+                                if (post.media != null) {
+                                    removeImageForPost(post.media)
+                                }
+                                repositoryPost.remove(post)
+                            }
+                        }
+
                         call.respond(HttpStatusCode.NoContent)
                     } catch (e: IllegalStateException) {
                         call.respond(
@@ -482,67 +502,68 @@ fun Application.configureRouting() {
                         } else {
                             if (!userId.equals(post.author)) {
                                 call.respond(HttpStatusCode.Unauthorized)
-                            }
-                            var mediaFile = ""
-                            var id = ObjectId()
-                            if (post.media != null && post.media.isNotBlank()) {
-                                mediaFile = saveImageForPost(post.media, id)
-                            }
-
-                            val postDB = PostsDatabase(
-                                _id = id,
-                                author = ObjectId(post.author),
-                                media = mediaFile,
-                                ytURL = post.ytURL,
-                                title = post.title,
-                                content = post.content,
-                                timestamp = post.timestamp ?: System.currentTimeMillis(),
-                                genre = ObjectId(post.genre),
-                                comments = mutableListOf(),
-                                likes = mutableListOf()
-                            )
-
-                            val result = repositoryPost.add(postDB)
-                            if (result == null) {
-                                call.respond(HttpStatusCode.InternalServerError)
                             } else {
-
-                                var postComments = mutableListOf<CommentsSerializable>()
-                                var postLikes = mutableListOf<LikesSerializable>()
-
-                                for (comment in postDB.comments) {
-                                    val commentSerializable = CommentsSerializable(
-                                        authorId = comment._authorId.toString(),
-                                        comment = comment.comment,
-                                        timeOfPost = comment.timeOfPost,
-                                    )
-                                    postComments.add(commentSerializable)
+                                var mediaFile = ""
+                                var id = ObjectId()
+                                if (post.media != null && post.media.isNotBlank()) {
+                                    mediaFile = saveImageForPost(post.media, id)
                                 }
 
-                                for (like in postDB.likes) {
-                                    val likeSerializable = LikesSerializable(
-                                        userId = like._userId.toString()
-                                    )
-                                    postLikes.add(likeSerializable)
-                                }
-
-                                val answer = PostsSerializables(
-                                    id = postDB._id.toString(),
-                                    author = postDB.author.toString(),
-                                    media = postDB.media,
-                                    ytURL = postDB.ytURL,
-                                    title = postDB.title,
+                                val postDB = PostsDatabase(
+                                    _id = id,
+                                    author = ObjectId(post.author),
+                                    media = mediaFile,
+                                    ytURL = post.ytURL,
+                                    title = post.title,
                                     content = post.content,
-                                    timestamp = post.timestamp,
-                                    genre = postDB.genre.toString(),
-                                    comments = postComments,
-                                    likes = postLikes
+                                    timestamp = post.timestamp ?: System.currentTimeMillis(),
+                                    genre = ObjectId(post.genre),
+                                    comments = mutableListOf(),
+                                    likes = mutableListOf()
                                 )
 
-                                call.respond(
-                                    HttpStatusCode.Created,
-                                    answer
-                                )
+                                val result = repositoryPost.add(postDB)
+                                if (result == null) {
+                                    call.respond(HttpStatusCode.InternalServerError)
+                                } else {
+
+                                    var postComments = mutableListOf<CommentsSerializable>()
+                                    var postLikes = mutableListOf<LikesSerializable>()
+
+                                    for (comment in postDB.comments) {
+                                        val commentSerializable = CommentsSerializable(
+                                            authorId = comment._authorId.toString(),
+                                            comment = comment.comment,
+                                            timeOfPost = comment.timeOfPost,
+                                        )
+                                        postComments.add(commentSerializable)
+                                    }
+
+                                    for (like in postDB.likes) {
+                                        val likeSerializable = LikesSerializable(
+                                            userId = like._userId.toString()
+                                        )
+                                        postLikes.add(likeSerializable)
+                                    }
+
+                                    val answer = PostsSerializables(
+                                        id = postDB._id.toString(),
+                                        author = postDB.author.toString(),
+                                        media = postDB.media,
+                                        ytURL = postDB.ytURL,
+                                        title = postDB.title,
+                                        content = post.content,
+                                        timestamp = post.timestamp,
+                                        genre = postDB.genre.toString(),
+                                        comments = postComments,
+                                        likes = postLikes
+                                    )
+
+                                    call.respond(
+                                        HttpStatusCode.Created,
+                                        answer
+                                    )
+                                }
                             }
                         }
                     } catch (e: Exception) {
@@ -557,70 +578,71 @@ fun Application.configureRouting() {
                         val idParameter = call.parameters["id"]!!
                         if (idParameter == "" || idParameter.isEmpty()) {
                             call.respond(HttpStatusCode.BadRequest)
-                        }
+                        } else {
+                            val postParameter = call.receive<PostsSerializables>()
 
-                        val postParameter = call.receive<PostsSerializables>()
+                            if (postParameter == null) {
+                                call.respond(HttpStatusCode.BadRequest)
+                            } else {
 
-                        if (postParameter == null) {
-                            call.respond(HttpStatusCode.BadRequest)
-                        }
+                                val principal = call.principal<JWTPrincipal>()
+                                val expirationDate =
+                                    principal!!.expiresAt?.time?.minus(System.currentTimeMillis().toInt())
 
-                        val principal = call.principal<JWTPrincipal>()
+                                if (expirationDate != null && expirationDate < 0) {
+                                    call.respond(HttpStatusCode.Unauthorized)
+                                    println("Fecha error")
+                                } else {
 
-                        val username = principal!!.payload.getClaim("username").asString()
-                        val expirationDate = principal.expiresAt?.time?.minus(System.currentTimeMillis().toInt())
-                        val userId = repositoryUser.getByUsername(username)!!.id.toString()
+                                    println("Despues de la comrpobacion de errores")
 
-                        if (expirationDate != null && expirationDate < 0) {
-                            call.respond(HttpStatusCode.Unauthorized)
-                        }
-                        if (userId != idParameter && userId != postParameter.author) {
-                            call.respond(HttpStatusCode.Unauthorized)
-                        }
+                                    val id = ObjectId(idParameter)
+                                    val post = repositoryPost.getById(id)
 
-                        val id = ObjectId(idParameter)
-                        val post = repositoryPost.getById(id)
+                                    if (post == null) {
+                                        call.respond(HttpStatusCode.NotFound)
+                                    } else {
 
-                        if (post == null) {
-                            call.respond(HttpStatusCode.NotFound)
-                        }
+                                        var updatedLikes = mutableListOf<LikesDatabase>()
+                                        var updatedComments = mutableListOf<CommentsDatabase>()
 
-                        var updatedLikes = mutableListOf<LikesDatabase>()
-                        var updatedComments = mutableListOf<CommentsDatabase>()
+                                        if (postParameter.likes != null && postParameter.likes.isNotEmpty()) {
+                                            for (like in postParameter.likes) {
+                                                val likesDatabase = LikesDatabase(
+                                                    _userId = ObjectId(like.userId),
+                                                )
+                                                updatedLikes.add(likesDatabase)
+                                            }
+                                        }
+                                        if (postParameter.comments != null && postParameter.comments.isNotEmpty()) {
+                                            for (comment in postParameter.comments) {
+                                                val commentsDatabase = CommentsDatabase(
+                                                    ObjectId(comment.authorId),
+                                                    comment.comment,
+                                                    timeOfPost = comment.timeOfPost ?: System.currentTimeMillis(),
+                                                )
+                                                updatedComments.add(commentsDatabase)
+                                            }
+                                        }
 
-                        if (postParameter.likes != null && postParameter.likes.isNotEmpty()) {
-                            for (like in postParameter.likes) {
-                                val likesDatabase = LikesDatabase(
-                                    _userId = ObjectId(like.userId),
-                                )
-                                updatedLikes.add(likesDatabase)
+                                        val postDB = PostsDatabase(
+                                            _id = id,
+                                            author = ObjectId(postParameter.author),
+                                            media = postParameter.media,
+                                            ytURL = postParameter.ytURL,
+                                            title = postParameter.title,
+                                            content = postParameter.content,
+                                            timestamp = postParameter.timestamp ?: System.currentTimeMillis(),
+                                            genre = ObjectId(postParameter.genre),
+                                            comments = updatedComments,
+                                            likes = updatedLikes
+                                        )
+                                        repositoryPost.updatebyId(postDB, id)
+                                        call.respond(HttpStatusCode.NoContent)
+                                    }
+                                }
                             }
                         }
-                        if (postParameter.comments != null && postParameter.comments.isNotEmpty()) {
-                            for (comment in postParameter.comments) {
-                                val commentsDatabase = CommentsDatabase(
-                                    ObjectId(comment.authorId),
-                                    comment.comment,
-                                    timeOfPost = comment.timeOfPost?: System.currentTimeMillis(),
-                                )
-                                updatedComments.add(commentsDatabase)
-                            }
-                        }
-
-                        val postDB = PostsDatabase(
-                            _id = id,
-                            author = ObjectId(postParameter.author),
-                            media = postParameter.media,
-                            ytURL = postParameter.ytURL,
-                            title = postParameter.title,
-                            content = postParameter.content,
-                            timestamp = postParameter.timestamp ?: System.currentTimeMillis(),
-                            genre = ObjectId(postParameter.genre),
-                            comments = updatedComments,
-                            likes = updatedLikes
-                        )
-                        repositoryPost.updatebyId(postDB, id)
-                        call.respond(HttpStatusCode.NoContent)
 
                     } catch (e: IllegalStateException) {
                         call.respond(HttpStatusCode.BadRequest, mapOf("message" to e.localizedMessage))

@@ -61,7 +61,7 @@ class UserRepository {
                 )
                 bearerAuth(token)
             }
-            if (response.status == HttpStatusCode.NoContent) {
+            if (response.status == HttpStatusCode.OK) {
                 return "ok"
             } else {
                 println(response.status)
@@ -90,12 +90,14 @@ class UserRepository {
 
     suspend fun login(u: User): String {
         try {
+            println("urlLogin: $urlLogin")
             val response: HttpResponse = client.post(urlLogin) {
                 contentType(ContentType.Application.Json)
                 setBody(
                     u
                 )
             }
+            print(response.status)
             if (response.status == HttpStatusCode.OK) {
                 val decoded = Json.decodeFromString<HashMap<String, String>>(response.bodyAsText())
                 return decoded["token"].toString()
@@ -103,8 +105,10 @@ class UserRepository {
                 return ""
             }
         } catch (e: ConnectException) {
+            print(e.message)
             return "timedout"
         } catch (e: SocketTimeoutException) {
+            print(e.message)
             return "timedout"
         }
     }
@@ -181,6 +185,33 @@ class UserRepository {
         } catch (e: ConnectException) {
             return "error"
         } catch (e: SocketTimeoutException) {
+            return "error"
+        }
+    }
+
+    suspend fun updateAccount(id:String, token: String, newData: User) : String {
+        try {
+            println("UR id: $id")
+            println("UR token: $token")
+            val response : HttpResponse = client.put("${urlUsers}$id") {
+                contentType(ContentType.Application.Json)
+                bearerAuth(token)
+                setBody(
+                    newData
+                )
+            }
+            if (response.status == HttpStatusCode.OK) {
+                println("OK")
+                return "ok"
+            } else {
+                println("NO OK : ${response.status}")
+                return "error"
+            }
+        } catch (e: ConnectException) {
+            println("TOUT")
+            return "error"
+        } catch (e: SocketTimeoutException) {
+            println("TOUT")
             return "error"
         }
     }

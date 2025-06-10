@@ -4,16 +4,25 @@ import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import dam.nathan.classes.Connection
 import dam.nathan.classes.PostsDatabase
+import dam.nathan.classes.UserDatabase
 import dam.nathan.repositories.abstracts.APostRepository
+import dam.nathan.repositories.abstracts.AUserRepository
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 
 
-
+/**
+ * Class that contains information, providing features like adding posts, removing them and updating on the database.
+ *
+ * @param connection Connection of the database
+ *
+ * @see APostRepository
+ * @see Connection
+ *
+ * @author Nathan Gonzalez Mercado
+ */
 class PostRepository(private val connection : Connection) : APostRepository() {
-
-    //TODO Comment this class
 
     val env = dotenv {
         directory = "./"
@@ -23,6 +32,13 @@ class PostRepository(private val connection : Connection) : APostRepository() {
     val nameDB = env["DB_NAME"]
     val collection = env["POSTS_COLLECTION"]
 
+    /**
+     * Function that will get all the posts stored in the database
+     *
+     * @return List of PostDatabase that are found on the database. If no posts are found, an empty list will be returned.
+     * @see PostsDatabase
+     * @see Connection
+     */
     override suspend fun getAll(): List<PostsDatabase> {
         if (!connection.isOpen()) {
             connection.connect()
@@ -36,6 +52,14 @@ class PostRepository(private val connection : Connection) : APostRepository() {
         return emptyList()
     }
 
+    /**
+     * Function that will return a post based on an ID
+     *
+     * @param id An objectID that is related to a post.
+     * @return It will return a post if one is found or null if no post is found.
+     * @see PostsDatabase
+     * @see Connection
+     */
     override suspend fun getById(id: ObjectId): PostsDatabase? {
         if (!connection.isOpen()) {
             connection.connect()
@@ -50,6 +74,14 @@ class PostRepository(private val connection : Connection) : APostRepository() {
         return null
     }
 
+    /**
+     * Function that will update a post information. It will update the post by using it's ID.
+     *
+     * @param item Post that will be getting the update
+     * @see Connection
+     * @see PostsDatabase
+     *
+     */
     override suspend fun update(item: PostsDatabase) {
         if (!connection.isOpen()) {
             connection.connect()
@@ -67,7 +99,14 @@ class PostRepository(private val connection : Connection) : APostRepository() {
             collection.findOneAndUpdate(query, updated)
         }
     }
-
+    /**
+     * Function that will update a post information. It will update the post by using it's ID.
+     *
+     * @param item Post that will be getting the update
+     * @see Connection
+     * @see PostsDatabase
+     *
+     */
     override suspend fun updatebyId(item: PostsDatabase, id: ObjectId) {
         if (!connection.isOpen()) {
             connection.connect()
@@ -85,7 +124,14 @@ class PostRepository(private val connection : Connection) : APostRepository() {
             collection.findOneAndUpdate(query, updated)
         }
     }
-
+    /**
+     * Function that will remove a post
+     *
+     * @param item Post that will be removed.
+     * @see Connection
+     * @see PostsDatabase
+     *
+     */
     override suspend fun remove(item: PostsDatabase) {
         if (!connection.isOpen()) {
             connection.connect()
@@ -98,6 +144,14 @@ class PostRepository(private val connection : Connection) : APostRepository() {
         }
     }
 
+    /**
+     * Function that will remove a post by id
+     *
+     * @param id id of the post that will be removed.
+     * @see Connection
+     * @see PostsDatabase
+     *
+     */
     override suspend fun removeById(id: ObjectId) {
         if (!connection.isOpen()) {
             connection.connect()
@@ -110,6 +164,16 @@ class PostRepository(private val connection : Connection) : APostRepository() {
         }
     }
 
+    /**
+     * Function that will add a new post.
+     *
+     * @param item Post that will be added to the database
+     * @see Connection
+     * @see PostsDatabase
+     *
+     * @return id of the post if the post is added or null if it returns an error
+     *
+     */
     override suspend fun add(item: PostsDatabase): String? {
         if (!connection.isOpen()) {
             connection.connect()
@@ -123,6 +187,9 @@ class PostRepository(private val connection : Connection) : APostRepository() {
         return null
     }
 
+    /**
+     * @see APostRepository.findPostByUserId
+     */
     override suspend fun findPostByUserId(userID: ObjectId): List<PostsDatabase> {
         if (!connection.isOpen()) {
             connection.connect()
@@ -136,7 +203,9 @@ class PostRepository(private val connection : Connection) : APostRepository() {
         }
         return emptyList()
     }
-
+    /**
+     * @see APostRepository.addLike
+     */
     override suspend fun addLike(post: PostsDatabase) {
         if (!connection.isOpen()) {
             connection.connect()
@@ -152,7 +221,9 @@ class PostRepository(private val connection : Connection) : APostRepository() {
 
         }
     }
-
+    /**
+     * @see APostRepository.addComment
+     */
     override suspend fun addComment(post: PostsDatabase) {
         if (!connection.isOpen()) {
             connection.connect()

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -191,8 +192,10 @@ fun PostDetail(
                 )
             } else {
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(top = 60.dp),
-                    elevation = CardDefaults.cardElevation(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                        .height(if (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 580.dp else 420.dp)
+                        .padding(top = 60.dp).consumeWindowInsets(PaddingValues(top = 60.dp)),
+                    /*elevation = CardDefaults.cardElevation(8.dp),*/
                     shape = RoundedCornerShape(5.dp),
                     colors = CardColors(
                         contentColor = Color.White,
@@ -204,7 +207,7 @@ fun PostDetail(
                     Column(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.height(if (windowSizeClass.windowHeightSizeClass == WindowHeightSizeClass.COMPACT) 250.dp else 350.dp)
+                        modifier = Modifier.height(if (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 480.dp else 350.dp)
                             .fillMaxWidth()
                     ) {
                         if (windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT) {
@@ -219,35 +222,42 @@ fun PostDetail(
                                             .background(containerColor),
                                         post.ytURL,
                                     )
-
                                 }
                             }
                         } else {
-                            if (post.media != null && post.media != "") {
-                                imageLoader(post.media, photoSize)
-                            }
-
-                            Spacer(Modifier.height(10.dp))
-                            if (post.ytURL != null && post.ytURL != "") {
-                                println(post.ytURL)
-                                VideoPlayer(
-                                    Modifier.fillMaxWidth().height(videoHeight.dp)
-                                        .background(containerColor),
-                                    post.ytURL,
-                                )
+                            Column {
+                                if (post.media != null && post.media != "" && post.ytURL != null && post.ytURL != "") {
+                                    imageLoader(post.media, (photoSize - 75))
+                                    VideoPlayer(
+                                        Modifier.width(500.dp).height(120.dp)
+                                            .background(containerColor),
+                                        post.ytURL,
+                                    )
+                                } else {
+                                    if (post.media != null && post.media != "") {
+                                        imageLoader(post.media, photoSize)
+                                    }
+                                    if (post.ytURL != null && post.ytURL != "") {
+                                        VideoPlayer(
+                                            Modifier.width(500.dp).height(120.dp)
+                                                .background(containerColor),
+                                            post.ytURL,
+                                        )
+                                    }
+                                }
 
                             }
                         }
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(2.dp))
                         Row {
                             Text(
                                 text = "${author}: ",
-                                fontSize = 18.sp,
+                                fontSize = if (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 15.sp else 18.sp,
                                 textDecoration = TextDecoration.Underline,
                                 modifier = Modifier.clickable { goToAuthorProfile(post.author) })
-                            Text(text = "${post.content}", fontSize = 18.sp)
+                            Text(text = "${post.content}", fontSize = if (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 15.sp else 18.sp)
                         }
-                        Spacer(Modifier.height(25.dp))
+                        Spacer(Modifier.height(5.dp))
                         Row(
                             horizontalArrangement = Arrangement.End
                         ) {
@@ -297,11 +307,9 @@ fun PostDetail(
             }
             if (!waiting) {
                 LazyColumn(
-                    modifier = Modifier.
-                    fillMaxSize().
-                    background(MaterialTheme.colorScheme.secondaryContainer).
-                    padding(bottom = 72.dp).
-                    consumeWindowInsets(PaddingValues(bottom = 72.dp))
+                    modifier = Modifier.fillMaxSize()
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(bottom = 72.dp).consumeWindowInsets(PaddingValues(bottom = 72.dp))
 
                 ) {
                     if (commentSize > 0) {

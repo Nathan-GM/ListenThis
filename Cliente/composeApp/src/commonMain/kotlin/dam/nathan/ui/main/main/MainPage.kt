@@ -75,6 +75,7 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel, goToDetails: (Post, Gen
     ) {
         if (firstTime) {
             waiting = true
+            recommended = mutableListOf()
             scope.launch {
                 val tmpPost = postVM.getAllPosts()
                 val tmpGenres = genreVM.getAllGenres()
@@ -91,15 +92,18 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel, goToDetails: (Post, Gen
                                 secondGenre = tmpGenres.find { x -> x.id == randomGenre2 }
                                 if (secondGenre != genre) {
                                     secondGenreLatestPost =
-                                        tmpPost.first { x -> x.genre == secondGenre!!.id }
+                                        tmpPost.firstOrNull { x -> x.genre == secondGenre!!.id }
                                     same = false
-                                    recommended.add(secondGenreLatestPost!!)
+                                    if (secondGenreLatestPost != null) {
+                                        recommended.add(secondGenreLatestPost!!)
+                                    }
                                 }
                             }
                         }
-
-                        latestPost = tmpPost.first { x -> x.genre == genre!!.id }
-                        recommended.add(latestPost!!)
+                        latestPost = tmpPost.firstOrNull() { x -> x.genre == genre!!.id }
+                        if (latestPost != null) {
+                            recommended.add(latestPost!!)
+                        }
                     }
                 }
                 waiting = false
@@ -144,7 +148,6 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel, goToDetails: (Post, Gen
                             horizontalArrangement = Arrangement.Center,
                         ) {
                             if (latestPost != null && genre != null) {
-
                                 Column(
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -178,12 +181,13 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel, goToDetails: (Post, Gen
                         }
                     } else {
                         if (recommended.size > 0 && recommended.isNotEmpty()) {
+                            println(recommended.size)
                             LazyVerticalGrid(
                                 columns = GridCells.Adaptive(minSize = 250.dp),
                                 verticalArrangement = Arrangement.Center,
                                 horizontalArrangement = Arrangement.Center,
                             ) {
-                                items(recommended.size) {
+                                items(2) {
                                     if (recommended[it].genre == genre!!.id) {
                                         PostCard(
                                             userVM = userVM,

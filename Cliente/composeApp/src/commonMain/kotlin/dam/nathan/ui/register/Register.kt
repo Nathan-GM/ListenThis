@@ -3,6 +3,7 @@ package dam.nathan.ui.register
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -20,6 +21,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     goLogin: () -> Unit,
@@ -44,13 +46,52 @@ fun RegisterScreen(
                         )
                         )
 
+    var openDialog by remember { mutableStateOf(false) }
+
     var waiting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     var userRepository = UserRepository()
 
+
+    if (openDialog) {
+        BasicAlertDialog(
+            onDismissRequest = {
+            },
+        ) {
+            Surface(
+                modifier = Modifier.wrapContentSize(),
+                tonalElevation = AlertDialogDefaults.TonalElevation
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "Datos sobre la contraseña",
+                        style = MaterialTheme.typography.displaySmall
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        text = "La contraseña ha de tener: \n" +
+                                "- Mínimo 1 letra \n" +
+                                "- Mínimo 1 número o carácter especial \n" +
+                                "- Ha de tener 8 carácteres",
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+
+                    TextButton(
+                        onClick = { openDialog = false },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Entendido")
+                    }
+                }
+            }
+        }
+    }
+
     Box(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -75,25 +116,43 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                singleLine = true,
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(
-                        onClick = { showPassword = !showPassword }
-                    ) {
-                        val icon =
-                            if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                        Icon(
-                            icon,
-                            contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
-                        )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    singleLine = true,
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(
+                            onClick = { showPassword = !showPassword }
+                        ) {
+                            val icon =
+                                if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                            Icon(
+                                icon,
+                                contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
+                            )
+                        }
                     }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+
+                IconButton(
+                    onClick = {
+                        openDialog = true
+                    }
+                ) {
+                    Icon(
+                        Icons.Filled.Info,
+                        "",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
                 }
-            )
+            }
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
@@ -104,7 +163,9 @@ fun RegisterScreen(
                 visualTransformation = if (showConfirmationPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(
-                        onClick = { showConfirmationPassword = !showConfirmationPassword }
+                        onClick = {
+                            showConfirmationPassword = !showConfirmationPassword
+                        }
                     ) {
                         val icon =
                             if (showConfirmationPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -114,16 +175,6 @@ fun RegisterScreen(
                         )
                     }
                 }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "La contraseña ha de tener: \n" +
-                        "- Mínimo 1 letra \n" +
-                        "- Mínimo 1 número o carácter especial \n" +
-                        "- Ha de tener 8 carácteres",
-                color = MaterialTheme.colorScheme.onBackground,
             )
 
             Spacer(modifier = Modifier.height(16.dp))

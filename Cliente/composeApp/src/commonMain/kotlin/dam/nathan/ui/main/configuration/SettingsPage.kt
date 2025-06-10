@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
@@ -18,8 +19,10 @@ import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,11 +42,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dam.nathan.darkMode
+import dam.nathan.ib64
+import dam.nathan.models.User
 import dam.nathan.models.viewmodels.UserViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -> Unit) {
+fun SettingsPage(
+    userVM: UserViewModel,
+    isDarkModeOn: Boolean,
+    changeTheme: () -> Unit,
+    goToLogin: () -> Unit,
+) {
 
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
 
@@ -60,6 +71,11 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
     }
 
     var openDialog by remember { mutableStateOf(false) }
+
+    var openEditDialog by remember { mutableStateOf(false) }
+    var newUsername by remember { mutableStateOf("") }
+    var newAvatar by remember { mutableStateOf("") }
+    var biography by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -85,10 +101,16 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
 //            verticalArrangement = Arrangement.Center,
 //            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            if (waiting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(100.dp).align(Alignment.CenterHorizontally)
+                )
+            }
+
             if (openDialog) {
                 BasicAlertDialog(
                     onDismissRequest = {
-                        openDialog = false
                     },
                 ) {
                     Surface(
@@ -97,7 +119,8 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(
-                                text = "Eliminar cuenta de ${userVM.user.value.user?.username ?: "noUser"}", style = MaterialTheme.typography.displaySmall
+                                text = "Eliminar cuenta de ${userVM.user.value.user?.username ?: "noUser"}",
+                                style = MaterialTheme.typography.displaySmall
                             )
                             Spacer(modifier = Modifier.height(20.dp))
 
@@ -110,7 +133,7 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
 
                             Row(
                                 modifier = Modifier.align(Alignment.End)
-                            ){
+                            ) {
                                 TextButton(
                                     onClick = { openDialog = false },
                                 ) {
@@ -118,7 +141,17 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
                                 }
                                 Spacer(modifier = Modifier.width(15.dp))
                                 TextButton(
-                                    onClick = { openDialog = false },
+                                    onClick = {
+                                        waiting = true
+                                        scope.launch {
+                                            val result = userVM.deleteAccount()
+                                            if (result == "ok") {
+                                                goToLogin()
+                                            } else if (result == "error") {
+                                                error = true
+                                            }
+                                        }
+                                    },
                                     colors = ButtonColors(
                                         containerColor = MaterialTheme.colorScheme.errorContainer,
                                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -133,6 +166,110 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
                     }
                 }
             }
+
+            if (openEditDialog) {
+                biography = userVM.user.value.user?.biography ?: ""
+                BasicAlertDialog(
+                    onDismissRequest = {
+
+                    }
+                ) {
+                    Surface(
+                        modifier = Modifier.wrapContentSize(),
+                        tonalElevation = AlertDialogDefaults.TonalElevation
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Text(
+                                text = "Modificando ${userVM.user.value.user?.username ?: "noUser"}",
+                                style = MaterialTheme.typography.displaySmall
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            OutlinedTextField(
+                                value = newUsername,
+                                onValueChange = { newUsername = it },
+                                label = { Text("Nuevo nombre de usuario") },
+                                singleLine = true,
+                                placeholder = {
+                                    Text(
+                                        userVM.user.value.user?.username
+                                            ?: "Introduce tu nuevo usuario"
+                                    )
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            OutlinedTextField(
+                                value = biography,
+                                onValueChange = { biography = it },
+                                label = { Text("Nueva biografia") },
+                                singleLine = true,
+                                placeholder = {
+                                    Text(
+                                        userVM.user.value.user?.biography
+                                            ?: "Introduce tu nueva biografia"
+                                    )
+                                },
+                            )
+
+                            Text(if (userVM.user.value.user?.avatar != null) "Actualizar foto de perfil" else "Agregar foto de perfil")
+
+                            ib64(
+                                onChange = {
+                                    newAvatar = it
+                                }
+                            )
+
+                            Row(
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                TextButton(
+                                    onClick = { openEditDialog = false },
+                                ) {
+                                    Text("Cancelar")
+                                }
+                                Spacer(modifier = Modifier.width(15.dp))
+                                TextButton(
+                                    onClick = {
+                                        println(userVM.user.value.user!!.id)
+                                        waiting = true
+                                        scope.launch {
+                                            val newData = User(
+                                                username = newUsername,
+                                                password = userVM.user.value.user!!.password,
+                                                avatar = if (newAvatar.isNotEmpty() && newAvatar != "") newAvatar else userVM.user.value.user!!.avatar,
+                                                biography = biography,
+                                                followedGenres = userVM.user.value.user!!.followedGenres,
+                                            )
+                                            val result = userVM.editAccount(newData)
+                                            if (result == "error") {
+                                                error = true
+                                                waiting = false
+                                                openEditDialog = false
+                                            } else {
+                                                println("SP: newUSER: ${userVM.user.value.user!!.id}")
+                                                waiting = false
+
+                                                newUsername = ""
+                                                biography = ""
+                                                newAvatar = ""
+
+                                                openEditDialog = false
+                                            }
+                                        }
+                                    },
+                                    enabled = newUsername != null && newUsername.isNotEmpty()
+                                ) {
+                                    Text("Realizar cambios")
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+
             Card(
                 Modifier.wrapContentHeight().fillMaxWidth().padding(top = topPadding.dp)
                     .consumeWindowInsets(
@@ -143,7 +280,7 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
                     modifier = Modifier.padding(20.dp)
                 ) {
                     Text(
-                        "Configuración de ${userVM.user.value.user!!.username}",
+                        "Configuración de ${userVM.user.value.user?.username ?: "noUser"}",
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -159,7 +296,7 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
                     Row {
                         Button(
                             onClick = {
-                                println(userVM.user.value.user!!)
+                                openEditDialog = true
                             }
                         ) {
                             Text("Modificar datos")
@@ -178,6 +315,10 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
                         ) {
                             Text("Eliminar cuenta")
                         }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    if (error) {
+                        Text("Ha ocurrido un problema. Por favor, intentalo de nuevo más tarde.")
                     }
 
                 }
@@ -198,5 +339,6 @@ fun SettingsPage(userVM: UserViewModel, isDarkModeOn: Boolean, changeTheme: () -
             }
         }
     }
+
 
 }

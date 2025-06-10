@@ -1,18 +1,8 @@
 package dam.nathan.services
 
-import io.github.cdimascio.dotenv.dotenv
 import org.bson.types.ObjectId
 import java.io.File
 
-/**
- * TODO Do this service
- * Might be better do them when the client is able to create post so it is easy to test them.
- */
-
-val envMedia = dotenv {
-    directory = "./"
-    filename = "information.env"
-}
 
 val postDirectoryRoute = env["POST_MEDIA_DIRECTORY"]
 
@@ -23,6 +13,14 @@ val absoluteRouteMedia = tmpMedia.absolutePath.replace(".", "")
 
 val postDirectory = File(absoluteRouteMedia)
 
+/**
+ * Function that will save a picture with the postId as the file name.
+ *
+ * @param image Base64 that contains the image.
+ * @param postId Post's id.
+ *
+ * @return The file name where the image's stored.
+ */
 fun saveImageForPost(image: String, postId: ObjectId) : String {
     val fileName = "${postId.toString()}.txt"
     var fileExists = false
@@ -42,6 +40,13 @@ fun saveImageForPost(image: String, postId: ObjectId) : String {
     return imageFile.name
 }
 
+/**
+ * Function that will load an image.
+ *
+ * @param imageRoute File where the image's stored.
+ *
+ * @return The text saved on the file, it will be the image encoded in Base64.
+ */
 fun loadImageForPost(imageRoute : String): String {
     val files = postDirectory.listFiles()
     for (file in files) {
@@ -50,4 +55,17 @@ fun loadImageForPost(imageRoute : String): String {
         }
     }
     return ""
+}
+/**
+ * Function that will remove an image.
+ *
+ * @param imageName File where the image's stored.
+ */
+fun removeImageForPost(imageName: String) {
+    for (file in postDirectory.listFiles()) {
+        if (file.name == imageName) {
+            file.delete()
+            break
+        }
+    }
 }

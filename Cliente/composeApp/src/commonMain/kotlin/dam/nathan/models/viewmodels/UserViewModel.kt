@@ -38,6 +38,7 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
     }
 
     suspend fun login(user: User) : String {
+        println("INICIA LOGIN")
         var result = repository.login(user)
         if (result != "" && result != "timedout") {
             _token.value = result
@@ -74,6 +75,29 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
         }
     }
 
+    suspend fun editAccount(newData : User) : String? {
+        var originalUser = _user.value.user
+        println("UVM ID: ${_user.value.user!!.id!!}")
+        println("UVM newData: $newData")
+        val result = repository.updateAccount(_user.value.user!!.id!!, _user.value.token!!, newData)
+        if (result == "ok") {
+            val finalNewUser = User(
+                id = originalUser!!.id,
+                username = newData.username,
+                password = newData.password,
+                avatar = newData.avatar,
+                biography = newData.biography,
+                followedGenres = originalUser.followedGenres
+            )
+            _user.value.user = finalNewUser
+            user.value.user = finalNewUser
+            println("VM: newUSER: ${_user.value.user} || ${user.value.user}")
+            return "ok"
+        } else {
+            return "error"
+        }
+    }
+
     suspend fun deleteAccount() : String {
         var originalUser = _user.value.user
         val result = repository.removeAccount(_user.value.user!!.id!!, _user.value.token!!)
@@ -84,7 +108,6 @@ class UserViewModel(val repository : UserRepository) : ViewModel() {
             logut()
             return "ok"
         }
-
     }
 
 }
