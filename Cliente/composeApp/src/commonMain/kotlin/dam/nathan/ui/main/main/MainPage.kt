@@ -187,7 +187,7 @@ fun MainPage(user: UserwithToken, userVM: UserViewModel, goToDetails: (Post, Gen
                                 verticalArrangement = Arrangement.Center,
                                 horizontalArrangement = Arrangement.Center,
                             ) {
-                                items(2) {
+                                items(if (recommended.size == 2 || recommended.size == 4 ) 2 else 1) {
                                     if (recommended[it].genre == genre!!.id) {
                                         PostCard(
                                             userVM = userVM,
